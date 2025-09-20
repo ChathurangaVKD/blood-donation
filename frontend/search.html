@@ -1,0 +1,516 @@
+<!-- search.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Blood - Blood Donation System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="notifications.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blood: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-gradient-to-r from-blood-800 to-blood-600 shadow-lg">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="text-white font-bold text-2xl flex items-center gap-2">
+                        <i class="fas fa-heart text-red-300"></i>
+                        BloodLink
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</a>
+                        <a href="register.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Register</a>
+                        <a href="login.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</a>
+                        <a href="request.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Request Blood</a>
+                        <a href="search.html" class="bg-blood-900 text-white px-3 py-2 rounded-md text-sm font-medium">Search</a>
+                        <a href="contact.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-3">
+                <i class="fas fa-search text-blood-600"></i>
+                Search for Blood & Donors
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Find available blood donors and inventory units in your area. Use the filters below to narrow your search.
+            </p>
+        </div>
+
+        <!-- Search Form -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+            <form id="searchForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label for="search_blood_group" class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <i class="fas fa-tint text-blood-600"></i>
+                            Blood Group
+                        </label>
+                        <select id="search_blood_group" name="blood_group"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500 transition-colors bg-white">
+                            <option value="">All Blood Groups</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="search_location" class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <i class="fas fa-map-marker-alt text-blood-600"></i>
+                            Location
+                        </label>
+                        <input type="text" id="search_location" name="location"
+                               placeholder="Enter city or area"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500 transition-colors">
+                    </div>
+                    <div class="space-y-2">
+                        <label for="search_type" class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <i class="fas fa-filter text-blood-600"></i>
+                            Search Type
+                        </label>
+                        <select id="search_type" name="search_type"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500 transition-colors bg-white">
+                            <option value="both">Both Donors & Inventory</option>
+                            <option value="donors">Donors Only</option>
+                            <option value="inventory">Inventory Only</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-center pt-4">
+                    <button type="button" id="searchButton"
+                            class="bg-gradient-to-r from-blood-600 to-blood-700 hover:from-blood-700 hover:to-blood-800 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center gap-2">
+                        <i class="fas fa-search"></i>
+                        Search Now
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="hidden">
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="animate-spin rounded-full h-16 w-16 border-4 border-blood-200 border-t-blood-600 mb-4"></div>
+                <p class="text-lg font-medium text-gray-600">Searching for matches...</p>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="searchResults" class="space-y-8">
+            <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200">
+                <div class="max-w-md mx-auto">
+                    <i class="fas fa-search text-6xl text-blue-400 mb-6"></i>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Ready to Search</h3>
+                    <p class="text-gray-600 leading-relaxed">Enter your search criteria above to find blood donors and available blood units in your area.</p>
+                    <div class="mt-6 flex justify-center space-x-4">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-users mr-2 text-blue-500"></i>
+                            <span>Find Donors</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-flask mr-2 text-purple-500"></i>
+                            <span>Check Inventory</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gradient-to-r from-blood-800 to-blood-600 mt-16">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-white">&copy; 2025 BloodLink - Blood Donation System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // University Demo - Fixed Search functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('searchForm');
+            const searchResults = document.getElementById('searchResults');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            // REMOVED: Auto-load on page load - let user trigger search manually
+            console.log('🎓 University Demo: Page loaded, waiting for user input...');
+
+            // Manual search when form is submitted
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('🔍 Form submitted - performing search...');
+                    performSearch();
+                });
+            }
+
+            // Search button click
+            const searchButton = document.getElementById('searchButton');
+            if (searchButton) {
+                searchButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('🔍 Search button clicked - performing search...');
+                    performSearch();
+                });
+            }
+
+            // Real-time search when filters change - ONLY if user has interacted
+            let userHasInteracted = false;
+
+            document.getElementById('search_blood_group').addEventListener('change', function(e) {
+                console.log('🔍 Blood group changed to:', e.target.value);
+                userHasInteracted = true;
+                performSearch();
+            });
+
+            document.getElementById('search_type').addEventListener('change', function(e) {
+                console.log('🔍 Search type changed to:', e.target.value);
+                userHasInteracted = true;
+                performSearch();
+            });
+
+            // Add event listener for location field with debounce
+            const locationInput = document.getElementById('search_location');
+            let searchTimeout;
+            locationInput.addEventListener('input', function(e) {
+                console.log('🔍 Location input changed to:', e.target.value);
+                userHasInteracted = true;
+                // Debounce the search to avoid too many API calls while typing
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
+            // Also trigger search when location field loses focus
+            locationInput.addEventListener('blur', function(e) {
+                if (userHasInteracted) {
+                    console.log('🔍 Location field lost focus, value:', e.target.value);
+                    performSearch();
+                }
+            });
+
+            async function performSearch() {
+                console.log('🔍 Starting search with filters...');
+
+                if (loadingSpinner) {
+                    loadingSpinner.classList.remove('hidden');
+                }
+                if (searchResults) {
+                    searchResults.classList.add('opacity-50');
+                }
+
+                try {
+                    // Get filter values from form elements - ENSURE WE GET ACTUAL VALUES
+                    const bloodGroupElement = document.getElementById('search_blood_group');
+                    const locationElement = document.getElementById('search_location');
+                    const searchTypeElement = document.getElementById('search_type');
+
+                    // Debug: Check if elements exist and log their current values
+                    console.log('🔍 Form elements found:');
+                    console.log('  - Blood Group Element:', bloodGroupElement);
+                    console.log('  - Location Element:', locationElement);
+                    console.log('  - Search Type Element:', searchTypeElement);
+
+                    if (!bloodGroupElement || !locationElement || !searchTypeElement) {
+                        console.error('❌ Form elements not found!');
+                        return;
+                    }
+
+                    // ENHANCED DEBUG: Log element properties and states
+                    console.log('🔍 Element detailed inspection:');
+                    console.log('  - bloodGroupElement.selectedIndex:', bloodGroupElement.selectedIndex);
+                    console.log('  - bloodGroupElement.options[selectedIndex]:', bloodGroupElement.options[bloodGroupElement.selectedIndex]);
+                    console.log('  - locationElement.value raw:', JSON.stringify(locationElement.value));
+                    console.log('  - searchTypeElement.selectedIndex:', searchTypeElement.selectedIndex);
+                    console.log('  - searchTypeElement.options[selectedIndex]:', searchTypeElement.options[searchTypeElement.selectedIndex]);
+
+                    // Debug: Log raw values before processing
+                    console.log('🔍 Raw element values:');
+                    console.log('  - bloodGroupElement.value:', JSON.stringify(bloodGroupElement.value));
+                    console.log('  - locationElement.value:', JSON.stringify(locationElement.value));
+                    console.log('  - searchTypeElement.value:', JSON.stringify(searchTypeElement.value));
+
+                    // WAIT A MOMENT for any pending UI updates
+                    await new Promise(resolve => setTimeout(resolve, 10));
+
+                    // Get actual values from form elements - ENHANCED
+                    const bloodGroup = bloodGroupElement.value;
+                    const location = locationElement.value.trim();
+                    const searchType = searchTypeElement.value;
+
+                    console.log('🎓 ENHANCED Filter values collected:');
+                    console.log('  - Blood Group: "' + bloodGroup + '" (length: ' + bloodGroup.length + ')');
+                    console.log('  - Location: "' + location + '" (length: ' + location.length + ')');
+                    console.log('  - Search Type: "' + searchType + '" (length: ' + searchType.length + ')');
+
+                    // ADDITIONAL CHECK: Verify non-empty values
+                    console.log('🎯 Value verification:');
+                    console.log('  - bloodGroup truthy?', !!bloodGroup);
+                    console.log('  - location truthy?', !!location);
+                    console.log('  - searchType truthy?', !!searchType);
+
+                    // Build search parameters - ENHANCED logic
+                    const searchParams = {
+                        blood_group: bloodGroup || '',
+                        location: location || '',
+                        search_type: searchType || 'both'
+                    };
+
+                    console.log('🔍 FINAL search params object before API call:', searchParams);
+                    console.log('🎯 Params breakdown:');
+                    Object.entries(searchParams).forEach(([key, value]) => {
+                        console.log(`  - ${key}: "${value}" (type: ${typeof value}, length: ${value.length})`);
+                    });
+
+                    // Make API call using GET method with parameters
+                    console.log('🚀 Making API call to SEARCH endpoint...');
+                    const result = await apiCall('SEARCH', searchParams, 'GET');
+                    console.log('🎓 Search API result received:', result);
+
+                    if (result.success) {
+                        displaySearchResults(result);
+
+                        // Show notification for university demo
+                        if (window.notifications) {
+                            const totalResults = (result.results.donors?.length || 0) + (result.results.inventory?.length || 0);
+                            const filterInfo = searchParams.blood_group ? ` for ${searchParams.blood_group} blood type` : '';
+                            const locationInfo = searchParams.location ? ` in ${searchParams.location}` : '';
+                            notifications.showToast('success', 'Search Complete', `Found ${totalResults} results${filterInfo}${locationInfo}`);
+                        }
+                    } else {
+                        console.error('🎓 Search failed:', result.message);
+                        showSearchError(result.message || 'Search failed');
+                    }
+
+                } catch (error) {
+                    console.error('🎓 Search error:', error);
+                    showSearchError(error.message || 'Connection error');
+                } finally {
+                    if (loadingSpinner) {
+                        loadingSpinner.classList.add('hidden');
+                    }
+                    if (searchResults) {
+                        searchResults.classList.remove('opacity-50');
+                    }
+                }
+            }
+
+            function displaySearchResults(data) {
+                if (!searchResults) return;
+
+                const results = data.results;
+                const totalMatches = results.total_matches || 0;
+
+                console.log('Displaying search results:', results);
+
+                if (totalMatches === 0) {
+                    searchResults.innerHTML = `
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+                            <i class="fas fa-info-circle text-4xl text-yellow-500 mb-4"></i>
+                            <h3 class="text-xl font-semibold text-yellow-800 mb-2">No Results Found</h3>
+                            <p class="text-yellow-700">Try adjusting your search criteria or remove filters to see all donors.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <!-- University Demo Results Summary -->
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-database text-green-600 text-2xl"></i>
+                            <div>
+                                <h2 class="text-xl font-bold text-green-800">🎓 University Demo - Database Results</h2>
+                                <p class="text-green-700">Successfully loaded ${totalMatches} records from MySQL database</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Display donors from database
+                if (results.donors && results.donors.length > 0) {
+                    html += `
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-6">
+                            <div class="bg-blue-50 px-6 py-4 border-b border-gray-200">
+                                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <i class="fas fa-users text-blue-600"></i>
+                                    Blood Donors from Database (${results.donors.length})
+                                </h3>
+                                <p class="text-sm text-blue-600 mt-1">🎓 Showing real data from MySQL blood_donation.donors table</p>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    `;
+
+                    results.donors.forEach(donor => {
+                        const eligibleBadge = donor.eligible_to_donate
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-orange-100 text-orange-800';
+                        const eligibleText = donor.eligible_to_donate
+                            ? '✅ Available'
+                            : '⏳ Not Available';
+
+                        html += `
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600 text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-900">${donor.name}</h4>
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">${donor.blood_group}</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex items-center gap-2 text-gray-600">
+                                        <i class="fas fa-map-marker-alt text-gray-400"></i>
+                                        <span><strong>Location:</strong> ${donor.location}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-gray-600">
+                                        <i class="fas fa-phone text-gray-400"></i>
+                                        <span><strong>Contact:</strong> ${donor.contact}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-gray-600">
+                                        <i class="fas fa-calendar text-gray-400"></i>
+                                        <span><strong>Last Donation:</strong> ${donor.formatted_last_donation || 'Never donated'}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="${eligibleBadge} px-2 py-1 rounded text-xs font-medium">
+                                            ${eligibleText}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <p class="text-xs text-blue-600">
+                                        <i class="fas fa-database mr-1"></i>
+                                        Database ID: ${donor.id} | Status: ${donor.donation_status}
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Display inventory (if any)
+                if (results.inventory && results.inventory.length > 0) {
+                    html += `
+                        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-6">
+                            <div class="bg-purple-50 px-6 py-4 border-b border-gray-200">
+                                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <i class="fas fa-flask text-purple-600"></i>
+                                    Blood Inventory (${results.inventory.length})
+                                </h3>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    `;
+
+                    results.inventory.forEach(unit => {
+                        html += `
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <h4 class="font-bold text-gray-900 mb-2">${unit.blood_group} Unit</h4>
+                                <div class="space-y-1 text-sm text-gray-600">
+                                    <div>📍 ${unit.location}</div>
+                                    <div>📅 Expires: ${unit.formatted_expiry}</div>
+                                    <div>⏰ ${unit.days_to_expiry} days remaining</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
+                            <i class="fas fa-info-circle text-blue-500 text-2xl mb-2"></i>
+                            <h3 class="text-lg font-semibold text-blue-800">No Blood Inventory Available</h3>
+                            <p class="text-blue-700">🎓 University Demo: Showing ${results.donors.length} donors from database. No inventory units currently stored.</p>
+                        </div>
+                    `;
+                }
+
+                // Add database info for university demo
+                html += `
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-database text-gray-500 mr-2"></i>
+                            🎓 University Demo: Data loaded from <strong>blood_donation</strong> database on <strong>localhost:3306</strong>
+                        </p>
+                    </div>
+                `;
+
+                searchResults.innerHTML = html;
+                console.log('✅ Search results displayed successfully');
+            }
+
+            function showSearchError(message) {
+                if (searchResults) {
+                    searchResults.innerHTML = `
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+                            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                            <h3 class="text-xl font-semibold text-red-800 mb-2">🎓 University Demo - Search Error</h3>
+                            <p class="text-red-600 mb-4">${message}</p>
+                            <div class="bg-white p-4 rounded-lg border border-red-200 text-left">
+                                <h4 class="font-semibold text-red-800 mb-2">Debug Information:</h4>
+                                <ul class="text-sm text-red-700 space-y-1">
+                                    <li>• Frontend: http://localhost:8080</li>
+                                    <li>• Backend API: http://localhost:8081</li>
+                                    <li>• Database: localhost:3306/blood_donation</li>
+                                    <li>• Expected: 3 donors in database</li>
+                                </ul>
+                            </div>
+                            <button onclick="location.reload()" class="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-refresh mr-2"></i>Retry Search
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
