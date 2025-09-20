@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="notifications.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -323,51 +324,155 @@
     <script src="config.js"></script>
     <script src="script.js"></script>
     <script>
-        // Enhanced form handling
+        // Enhanced form handling with better validation and user feedback
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const button = document.getElementById('registerButton');
             const messageDiv = document.getElementById('registerMessage');
 
-            // Show loading state
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Registering...';
-            button.disabled = true;
+            // Clear previous messages
+            messageDiv.innerHTML = '';
 
-            // Get form data
+            // Validate form before submission
             const formData = new FormData(this);
+            const validation = validateRegistrationForm(formData);
+
+            if (!validation.isValid) {
+                messageDiv.innerHTML = `
+                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-start gap-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                            <div class="flex-1">
+                                <h4 class="text-xl font-bold text-red-800 mb-2">Registration Failed</h4>
+                                <p class="text-red-700 mb-3">Please correct the following issues:</p>
+                                <ul class="text-red-700 space-y-1">
+                                    ${validation.errors.map(error => `<li>• ${error}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show enhanced loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Your Donor Profile...';
+            button.disabled = true;
+            button.classList.add('cursor-not-allowed', 'opacity-75');
 
             // Make API call
             fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.REGISTER, {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     messageDiv.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                                <div>
-                                    <h4 class="font-semibold text-green-800">Registration Successful!</h4>
-                                    <p class="text-green-700 mt-1">Welcome to BloodLink! You can now login to your account.</p>
+                        <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6 animate-slide-up">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-500 w-12 h-12 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-white text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xl font-bold text-green-800 mb-2">Registration Successful! 🎉</h4>
+                                    <p class="text-green-700 mb-3">Welcome to BloodLink! Your donor profile has been created successfully.</p>
+
+                                    <!-- Donor Profile Card -->
+                                    ${data.data ? `
+                                    <div class="bg-white rounded-xl border border-green-200 p-4 mb-4">
+                                        <h5 class="text-green-800 font-semibold mb-3 flex items-center gap-2">
+                                            <i class="fas fa-user-circle"></i>
+                                            Your Donor Profile
+                                        </h5>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                            <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                                                <i class="fas fa-user text-blue-600"></i>
+                                                <span class="font-medium">Name:</span>
+                                                <span class="font-bold">${data.data.name}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                                                <i class="fas fa-tint text-red-600"></i>
+                                                <span class="font-medium">Blood Type:</span>
+                                                <span class="font-bold text-red-700">${data.data.blood_group}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                                <i class="fas fa-map-marker-alt text-gray-600"></i>
+                                                <span class="font-medium">Location:</span>
+                                                <span class="font-bold">${data.data.location}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
+                                                <i class="fas fa-check-circle text-green-600"></i>
+                                                <span class="font-medium">Status:</span>
+                                                <span class="font-bold text-green-700">Verified Donor</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+
+                                    <!-- Next Steps -->
+                                    <div class="bg-blue-50 rounded-xl border border-blue-200 p-4 mb-4">
+                                        <h5 class="text-blue-800 font-semibold mb-2 flex items-center gap-2">
+                                            <i class="fas fa-list-check"></i>
+                                            What's Next?
+                                        </h5>
+                                        <ul class="text-blue-700 text-sm space-y-1">
+                                            <li>✓ Your profile is now visible to those seeking blood donors</li>
+                                            <li>✓ You'll receive notifications when there are matching requests in your area</li>
+                                            <li>✓ You can login anytime to update your information</li>
+                                            <li>✓ Start helping save lives in your community!</li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <a href="login.html" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg text-center transition-colors flex items-center justify-center gap-2">
+                                            <i class="fas fa-sign-in-alt"></i>
+                                            Login to Your Account
+                                        </a>
+                                        <a href="search.html" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg text-center transition-colors flex items-center justify-center gap-2">
+                                            <i class="fas fa-search"></i>
+                                            Find Other Donors
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `;
                     this.reset();
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
+
+                    // Scroll to success message
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
+                    // Enhanced error display
+                    const errorList = data.errors ? data.errors.map(error => `<li>• ${error}</li>`).join('') : `<li>• ${data.message || 'An unknown error occurred'}</li>`;
+
                     messageDiv.innerHTML = `
-                        <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                                <div>
-                                    <h4 class="font-semibold text-red-800">Registration Failed</h4>
-                                    <p class="text-red-700 mt-1">${data.message}</p>
+                        <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+                            <div class="flex items-start gap-4">
+                                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                                <div class="flex-1">
+                                    <h4 class="text-xl font-bold text-red-800 mb-2">Registration Failed</h4>
+                                    <p class="text-red-700 mb-3">Please review and correct the following issues:</p>
+
+                                    <div class="bg-white p-4 rounded-lg border border-red-200 mb-4">
+                                        <ul class="text-red-700 space-y-1">
+                                            ${errorList}
+                                        </ul>
+                                    </div>
+
+                                    <div class="bg-red-100 p-3 rounded-lg border border-red-200">
+                                        <p class="text-sm text-red-600 flex items-center gap-2">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>If you continue to experience issues, please contact our support team.</span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -375,13 +480,17 @@
                 }
             })
             .catch(error => {
+                console.error('Registration error:', error);
                 messageDiv.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-start gap-4">
+                            <i class="fas fa-wifi text-red-600 text-2xl"></i>
                             <div>
-                                <h4 class="font-semibold text-red-800">Connection Error</h4>
-                                <p class="text-red-700 mt-1">Please check your connection and try again.</p>
+                                <h4 class="text-xl font-bold text-red-800 mb-2">Connection Error</h4>
+                                <p class="text-red-700 mb-3">Unable to complete registration due to a network issue.</p>
+                                <div class="bg-white p-3 rounded-lg border border-red-200">
+                                    <p class="text-sm text-red-600">Please check your internet connection and try again. Your information has not been saved.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -390,8 +499,73 @@
             .finally(() => {
                 button.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Register as Donor';
                 button.disabled = false;
+                button.classList.remove('cursor-not-allowed', 'opacity-75');
+
+                // Scroll to message
+                if (messageDiv.innerHTML) {
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             });
         });
+
+        // Form validation function
+        function validateRegistrationForm(formData) {
+            const errors = [];
+
+            // Required fields validation
+            const requiredFields = [
+                { field: 'name', label: 'Full Name' },
+                { field: 'age', label: 'Age' },
+                { field: 'gender', label: 'Gender' },
+                { field: 'blood_group', label: 'Blood Group' },
+                { field: 'contact', label: 'Phone Number' },
+                { field: 'location', label: 'Location' },
+                { field: 'email', label: 'Email Address' },
+                { field: 'password', label: 'Password' }
+            ];
+
+            requiredFields.forEach(({ field, label }) => {
+                const value = formData.get(field);
+                if (!value || value.trim() === '') {
+                    errors.push(`${label} is required`);
+                }
+            });
+
+            // Email validation
+            const email = formData.get('email');
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push('Please enter a valid email address');
+            }
+
+            // Age validation
+            const age = parseInt(formData.get('age'));
+            if (age && (age < 18 || age > 65)) {
+                errors.push('Age must be between 18 and 65 years');
+            }
+
+            // Phone validation
+            const phone = formData.get('contact');
+            if (phone && !/^[\+]?[\d\s\-\(\)]{10,}$/.test(phone)) {
+                errors.push('Please enter a valid phone number (minimum 10 digits)');
+            }
+
+            // Password validation
+            const password = formData.get('password');
+            if (password && password.length < 6) {
+                errors.push('Password must be at least 6 characters long');
+            }
+
+            // Terms checkbox
+            const terms = formData.get('terms');
+            if (!terms) {
+                errors.push('Please agree to the Terms and Conditions');
+            }
+
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
     </script>
 </body>
 </html>

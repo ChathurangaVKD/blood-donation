@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="notifications.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -185,89 +186,190 @@
     <script src="config.js"></script>
     <script src="script.js"></script>
     <script>
-        // Enhanced login form handling
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const button = document.getElementById('loginButton');
+        // Enhanced login form handling with notification system integration
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
             const messageDiv = document.getElementById('loginMessage');
 
-            // Show loading state
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
-            button.disabled = true;
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-            // Get form data
-            const formData = new FormData(this);
+                    // Clear previous messages
+                    messageDiv.innerHTML = '';
 
-            // Make API call
-            fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.LOGIN, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    messageDiv.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                                <div>
-                                    <h4 class="font-semibold text-green-800">Login Successful!</h4>
-                                    <p class="text-green-700 mt-1">Welcome back to BloodLink!</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    // Validate form using notification system
+                    const isValid = validateLoginForm();
+                    if (!isValid) {
+                        notifications.showToast('error', 'Validation Error', 'Please enter valid credentials');
+                        return;
+                    }
 
-                    // Store user info and redirect
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
-                } else {
-                    messageDiv.innerHTML = `
-                        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                                <div>
-                                    <h4 class="font-semibold text-red-800">Login Failed</h4>
-                                    <p class="text-red-700 mt-1">${data.message}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    // Set loading state using notification system
+                    notifications.setFormLoading(loginForm, true);
+                    notifications.showToast('info', 'Authenticating', 'Verifying your credentials...');
+
+                    try {
+                        const formData = new FormData(loginForm);
+
+                        // Use the apiCall function from config.js
+                        const result = await apiCall('LOGIN', formData, 'POST');
+
+                        if (result.success) {
+                            // Show success notification
+                            notifications.showToast('success', 'Login Successful', result.message || 'Welcome back! Redirecting to dashboard...');
+
+                            // Store user session data
+                            if (result.user) {
+                                localStorage.setItem('user', JSON.stringify(result.user));
+                            }
+
+                            // Redirect to dashboard
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 1500);
+                        } else {
+                            // Show error notification
+                            notifications.showToast('error', 'Login Failed', result.message || 'Invalid credentials. Please try again.');
+
+                            // Clear password field on failed login
+                            const passwordField = loginForm.querySelector('input[name="password"]');
+                            if (passwordField) {
+                                passwordField.value = '';
+                                passwordField.focus();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        notifications.showToast('error', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
+                    } finally {
+                        notifications.setFormLoading(loginForm, false);
+                    }
+                });
+            }
+
+            // Validate login form function
+            function validateLoginForm() {
+                const form = document.getElementById('loginForm');
+                let isValid = true;
+
+                const email = form.querySelector('input[name="email"]');
+                if (email) {
+                    const result = notifications.validateField(email, {
+                        required: true,
+                        email: true,
+                        label: 'Email'
+                    });
+                    if (!result.isValid) isValid = false;
                 }
-            })
-            .catch(error => {
-                messageDiv.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                            <div>
-                                <h4 class="font-semibold text-red-800">Connection Error</h4>
-                                <p class="text-red-700 mt-1">Please check your connection and try again.</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })
-            .finally(() => {
-                button.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
-                button.disabled = false;
-            });
+
+                const password = form.querySelector('input[name="password"]');
+                if (password) {
+                    const result = notifications.validateField(password, {
+                        required: true,
+                        label: 'Password'
+                    });
+                    if (!result.isValid) isValid = false;
+                }
+
+                return isValid;
+            }
         });
 
         // Password toggle functionality
-        document.getElementById('togglePassword').addEventListener('click', function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
             const passwordField = document.getElementById('password');
-            const icon = this.querySelector('i');
 
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                icon.className = 'fas fa-eye-slash text-gray-400 hover:text-gray-600';
-            } else {
-                passwordField.type = 'password';
-                icon.className = 'fas fa-eye text-gray-400 hover:text-gray-600';
+            if (togglePassword && passwordField) {
+                togglePassword.addEventListener('click', function() {
+                    const icon = this.querySelector('i');
+
+                    if (passwordField.type === 'password') {
+                        passwordField.type = 'text';
+                        icon.className = 'fas fa-eye-slash text-gray-400 hover:text-gray-600';
+                    } else {
+                        passwordField.type = 'password';
+                        icon.className = 'fas fa-eye text-gray-400 hover:text-gray-600';
+                    }
+                });
+            }
+        });
+
+        // Auto-focus email field on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailField = document.getElementById('email');
+            if (emailField) {
+                emailField.focus();
+            }
+        });
+
+        // Add real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailField = document.getElementById('email');
+            const passwordField = document.getElementById('password');
+
+            if (emailField) {
+                emailField.addEventListener('blur', function() {
+                    notifications.validateField(this, {
+                        required: true,
+                        email: true,
+                        label: 'Email'
+                    });
+                });
+
+                emailField.addEventListener('input', function() {
+                    // Clear error state on input
+                    if (this.classList.contains('field-error')) {
+                        this.classList.remove('field-error');
+                        const feedback = this.parentNode.querySelector('.form-feedback.error');
+                        if (feedback) feedback.remove();
+                    }
+                });
+            }
+
+            if (passwordField) {
+                passwordField.addEventListener('blur', function() {
+                    notifications.validateField(this, {
+                        required: true,
+                        label: 'Password'
+                    });
+                });
+
+                passwordField.addEventListener('input', function() {
+                    // Clear error state on input
+                    if (this.classList.contains('field-error')) {
+                        this.classList.remove('field-error');
+                        const feedback = this.parentNode.querySelector('.form-feedback.error');
+                        if (feedback) feedback.remove();
+                    }
+                });
+            }
+        });
+
+        // Handle "Remember me" functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const rememberCheckbox = document.getElementById('remember');
+            const emailField = document.getElementById('email');
+
+            // Load saved email if remember me was checked
+            if (emailField && localStorage.getItem('rememberedEmail')) {
+                emailField.value = localStorage.getItem('rememberedEmail');
+                if (rememberCheckbox) {
+                    rememberCheckbox.checked = true;
+                }
+            }
+
+            // Save/remove email based on remember me checkbox
+            if (rememberCheckbox && emailField) {
+                document.getElementById('loginForm').addEventListener('submit', function() {
+                    if (rememberCheckbox.checked) {
+                        localStorage.setItem('rememberedEmail', emailField.value);
+                    } else {
+                        localStorage.removeItem('rememberedEmail');
+                    }
+                });
             }
         });
     </script>
