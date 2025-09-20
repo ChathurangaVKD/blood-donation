@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blood Donation System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        blood: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            200: '#fecaca',
+                            300: '#fca5a5',
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'fade-in': 'fadeIn 0.5s ease-in',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+    <!-- Admin Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-blood-600 to-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Admin Login</h2>
+                <p class="text-gray-600">Secure access to admin dashboard</p>
+            </div>
+
+            <div id="loginMessage" class="mb-4"></div>
+
+            <form id="adminLoginForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="adminUsername" class="block text-sm font-bold text-gray-700 mb-2">
+                            <i class="fas fa-user mr-2"></i>Username
+                        </label>
+                        <input type="text" id="adminUsername" name="username" required
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blood-500 focus:border-blood-500 transition-colors"
+                               placeholder="Enter admin username">
+                    </div>
+
+                    <div>
+                        <label for="adminPassword" class="block text-sm font-bold text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Password
+                        </label>
+                        <input type="password" id="adminPassword" name="password" required
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blood-500 focus:border-blood-500 transition-colors"
+                               placeholder="Enter admin password">
+                    </div>
+
+                    <button type="submit" id="loginButton"
+                            class="w-full bg-gradient-to-r from-blood-600 to-red-600 hover:from-blood-700 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Login to Admin Panel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="hidden">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blood-800 via-blood-700 to-red-600 shadow-2xl">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center">
+                        <div class="text-white font-bold text-3xl flex items-center gap-3">
+                            <div class="bg-white bg-opacity-20 p-2 rounded-xl">
+                                <i class="fas fa-shield-alt text-red-300 text-2xl"></i>
+                            </div>
+                            Admin Dashboard
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-white opacity-80">
+                            <i class="fas fa-user mr-2"></i>
+                            Welcome, <span id="adminWelcome">Admin</span>
+                        </span>
+                        <button id="logoutButton" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Requests -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Requests</p>
+                            <p class="text-3xl font-bold text-gray-900" id="totalRequests">-</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-list text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Requests -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Pending</p>
+                            <p class="text-3xl font-bold text-yellow-600" id="pendingRequests">-</p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-full">
+                            <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Critical Requests -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Critical</p>
+                            <p class="text-3xl font-bold text-red-600" id="criticalRequests">-</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fulfilled Requests -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Fulfilled</p>
+                            <p class="text-3xl font-bold text-green-600" id="fulfilledRequests">-</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-filter mr-2"></i>Filter Requests
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="fulfilled">Fulfilled</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filterUrgency" class="block text-sm font-medium text-gray-700 mb-2">Urgency</label>
+                        <select id="filterUrgency" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500">
+                            <option value="">All Urgency</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filterBloodGroup" class="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+                        <select id="filterBloodGroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500">
+                            <option value="">All Blood Groups</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="applyFilters" class="w-full bg-blood-600 hover:bg-blood-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-search mr-2"></i>Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blood Requests Table -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900">
+                        <i class="fas fa-list-ul mr-2"></i>Blood Requests
+                    </h3>
+                </div>
+
+                <div id="requestsTable" class="overflow-x-auto">
+                    <div class="p-8 text-center">
+                        <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading requests...</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div id="pagination" class="hidden px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="pageInfo">-</span> results
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="prevPage" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="nextPage" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div id="updateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Update Request Status</h3>
+            <div id="updateRequestInfo" class="mb-4 p-3 bg-gray-50 rounded-lg"></div>
+
+            <form id="updateStatusForm">
+                <input type="hidden" id="updateRequestId">
+                <div class="space-y-4">
+                    <div>
+                        <label for="newStatus" class="block text-sm font-medium text-gray-700 mb-2">New Status</label>
+                        <select id="newStatus" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500">
+                            <option value="">Select Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="fulfilled">Fulfilled</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="adminNotes" class="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                        <textarea id="adminNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blood-500 focus:border-blood-500"
+                                  placeholder="Add any notes about this status update..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" id="cancelUpdate" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirmUpdate" class="flex-1 px-4 py-2 bg-blood-600 hover:bg-blood-700 text-white rounded-lg">
+                        Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentPage = 0;
+        const pageSize = 10;
+        let currentFilters = {};
+        let isLoggedIn = false;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            setupEventListeners();
+        });
+
+        // Check if already logged in
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}?action=check_session`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.logged_in) {
+                    sessionStorage.setItem('admin_logged_in', 'true');
+                    sessionStorage.setItem('admin_username', result.admin_username);
+                    showDashboard();
+                    loadDashboardData();
+                } else {
+                    showLoginModal();
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                showLoginModal();
+            }
+        }
+
+        function setupEventListeners() {
+            // Login form
+            document.getElementById('adminLoginForm').addEventListener('submit', handleLogin);
+
+            // Logout button
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+
+            // Filter controls
+            document.getElementById('applyFilters').addEventListener('click', applyFilters);
+
+            // Pagination
+            document.getElementById('prevPage').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextPage').addEventListener('click', () => changePage(1));
+
+            // Update modal
+            document.getElementById('cancelUpdate').addEventListener('click', closeUpdateModal);
+            document.getElementById('updateStatusForm').addEventListener('submit', handleStatusUpdate);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            formData.append('admin_action', 'login');
+
+            const loginButton = document.getElementById('loginButton');
+            const messageDiv = document.getElementById('loginMessage');
+
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Logging in...';
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    sessionStorage.setItem('admin_logged_in', 'true');
+                    sessionStorage.setItem('admin_username', result.admin_username);
+                    showDashboard();
+                    loadDashboardData();
+                } else {
+                    throw new Error(result.message || 'Login failed');
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                        <p class="text-red-800 text-sm">${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                loginButton.disabled = false;
+                loginButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Login to Admin Panel';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                const formData = new FormData();
+                formData.append('admin_action', 'logout');
+
+                await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                sessionStorage.clear();
+                showLoginModal();
+            }
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            isLoggedIn = false;
+        }
+
+        function showDashboard() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            isLoggedIn = true;
+
+            const username = sessionStorage.getItem('admin_username');
+            if (username) {
+                document.getElementById('adminWelcome').textContent = username;
+            }
+        }
+
+        async function loadDashboardData() {
+            await Promise.all([
+                loadStats(),
+                loadRequests()
+            ]);
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}?action=stats`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('totalRequests').textContent = stats.total_requests || 0;
+                    document.getElementById('pendingRequests').textContent = stats.pending_requests || 0;
+                    document.getElementById('criticalRequests').textContent = stats.critical_requests || 0;
+                    document.getElementById('fulfilledRequests').textContent = stats.fulfilled_requests || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadRequests() {
+            try {
+                const params = new URLSearchParams({
+                    action: 'list_requests',
+                    limit: pageSize,
+                    offset: currentPage * pageSize,
+                    ...currentFilters
+                });
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}?${params}`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    renderRequestsTable(result.data);
+                    updatePagination(result.pagination);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                document.getElementById('requestsTable').innerHTML = `
+                    <div class="p-8 text-center">
+                        <i class="fas fa-exclamation-triangle text-3xl text-red-400 mb-4"></i>
+                        <p class="text-red-600">Error loading requests: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderRequestsTable(requests) {
+            if (requests.length === 0) {
+                document.getElementById('requestsTable').innerHTML = `
+                    <div class="p-8 text-center">
+                        <i class="fas fa-inbox text-3xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">No blood requests found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Blood Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Urgency</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hospital</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${requests.map(request => `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#${request.id}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">${request.requester_name}</div>
+                                    <div class="text-sm text-gray-500">${request.requester_contact}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        🩸 ${request.blood_group}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyColor(request.urgency)}">
+                                        ${getUrgencyIcon(request.urgency)} ${request.urgency}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">${request.hospital}</div>
+                                    <div class="text-sm text-gray-500">${request.location}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}">
+                                        ${getStatusIcon(request.status)} ${request.status}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${request.units_needed}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(request.required_date)}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button onclick="openUpdateModal(${request.id}, '${request.requester_name}', '${request.status}')"
+                                            class="text-blue-600 hover:text-blue-900 mr-3">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteRequest(${request.id})"
+                                            class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('requestsTable').innerHTML = tableHTML;
+        }
+
+        function updatePagination(pagination) {
+            const paginationDiv = document.getElementById('pagination');
+            const pageInfo = document.getElementById('pageInfo');
+            const prevButton = document.getElementById('prevPage');
+            const nextButton = document.getElementById('nextPage');
+
+            if (pagination.total > 0) {
+                paginationDiv.classList.remove('hidden');
+                const start = pagination.offset + 1;
+                const end = Math.min(pagination.offset + pagination.limit, pagination.total);
+                pageInfo.textContent = `${start}-${end} of ${pagination.total}`;
+
+                prevButton.disabled = pagination.offset === 0;
+                nextButton.disabled = !pagination.has_more;
+            } else {
+                paginationDiv.classList.add('hidden');
+            }
+        }
+
+        function applyFilters() {
+            currentFilters = {
+                status: document.getElementById('filterStatus').value,
+                urgency: document.getElementById('filterUrgency').value,
+                blood_group: document.getElementById('filterBloodGroup').value
+            };
+
+            // Remove empty filters
+            Object.keys(currentFilters).forEach(key => {
+                if (!currentFilters[key]) {
+                    delete currentFilters[key];
+                }
+            });
+
+            currentPage = 0;
+            loadRequests();
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            if (currentPage < 0) currentPage = 0;
+            loadRequests();
+        }
+
+        function openUpdateModal(requestId, patientName, currentStatus) {
+            document.getElementById('updateRequestId').value = requestId;
+            document.getElementById('updateRequestInfo').innerHTML = `
+                <strong>Request #${requestId}</strong><br>
+                Patient: ${patientName}<br>
+                Current Status: <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(currentStatus)}">
+                    ${getStatusIcon(currentStatus)} ${currentStatus}
+                </span>
+            `;
+            document.getElementById('newStatus').value = currentStatus;
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.add('hidden');
+        }
+
+        async function handleStatusUpdate(e) {
+            e.preventDefault();
+
+            const requestId = document.getElementById('updateRequestId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            const adminNotes = document.getElementById('adminNotes').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('_method', 'PUT');
+                formData.append('id', requestId);
+                formData.append('status', newStatus);
+                formData.append('admin_notes', adminNotes);
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeUpdateModal();
+                    loadDashboardData(); // Refresh both stats and requests
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert('Error updating status: ' + error.message);
+            }
+        }
+
+        async function deleteRequest(requestId) {
+            if (!confirm('Are you sure you want to delete this blood request? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('_method', 'DELETE');
+                formData.append('id', requestId);
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadDashboardData(); // Refresh both stats and requests
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert('Error deleting request: ' + error.message);
+            }
+        }
+
+        // Utility functions
+        function getUrgencyColor(urgency) {
+            const colors = {
+                'Critical': 'bg-red-100 text-red-800',
+                'High': 'bg-orange-100 text-orange-800',
+                'Medium': 'bg-yellow-100 text-yellow-800',
+                'Low': 'bg-green-100 text-green-800'
+            };
+            return colors[urgency] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getUrgencyIcon(urgency) {
+            const icons = {
+                'Critical': '🔴',
+                'High': '🟠',
+                'Medium': '🟡',
+                'Low': '🟢'
+            };
+            return icons[urgency] || '⚪';
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'fulfilled': 'bg-green-100 text-green-800',
+                'cancelled': 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': '⏳',
+                'fulfilled': '✅',
+                'cancelled': '❌'
+            };
+            return icons[status] || '❓';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        }
+    </script>
+</body>
+</html>

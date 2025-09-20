@@ -698,616 +698,127 @@
         </div>
     </main>
 
-    <footer class="bg-gradient-to-r from-blood-800 to-blood-600 mt-20">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-white text-lg">&copy; 2025 BloodLink - Blood Donation System. All rights reserved.</p>
-        </div>
-    </footer>
-
     <script src="config.js"></script>
-    <script src="script.js"></script>
     <script>
-        // Set minimum date to today
-        document.getElementById('required_date').min = new Date().toISOString().split('T')[0];
+        // Tab switching functionality
+        document.getElementById('requestTab').addEventListener('click', function() {
+            document.getElementById('requestSection').classList.remove('hidden');
+            document.getElementById('donorSection').classList.add('hidden');
+            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
+            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            document.getElementById('donorTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
+            document.getElementById('donorTab').classList.add('text-gray-600', 'hover:bg-gray-50');
+        });
 
-        // Enhanced form handling with better UX
-        document.getElementById('requestForm').addEventListener('submit', function(e) {
+        document.getElementById('donorTab').addEventListener('click', function() {
+            document.getElementById('donorSection').classList.remove('hidden');
+            document.getElementById('requestSection').classList.add('hidden');
+            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
+            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            document.getElementById('requestTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
+            document.getElementById('requestTab').classList.add('text-gray-600', 'hover:bg-gray-50');
+        });
+
+        // Blood request form submission
+        document.getElementById('requestForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const button = document.getElementById('requestButton');
+            const submitButton = document.getElementById('requestButton');
             const messageDiv = document.getElementById('requestMessage');
 
-            // Clear previous messages
-            messageDiv.innerHTML = '';
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xl"></i> Processing Request...';
 
-            // Validate form before submission
-            const formData = new FormData(this);
-            const validation = validateRequestForm(formData);
+            try {
+                // Get form data
+                const formData = new FormData(this);
 
-            if (!validation.isValid) {
-                messageDiv.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                        <div class="flex items-start gap-4">
-                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                            <div>
-                                <h4 class="text-xl font-bold text-red-800 mb-2">Validation Error</h4>
-                                <ul class="text-red-700 space-y-1">
-                                    ${validation.errors.map(error => `<li>• ${error}</li>`).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
+                // Validate required fields
+                const requiredFields = ['requester_name', 'requester_contact', 'requester_email', 'blood_group', 'units_needed', 'urgency', 'required_date', 'hospital', 'location'];
+                let missingFields = [];
 
-            // Enhanced loading state
-            button.innerHTML = `
-                <div class="flex items-center justify-center gap-3">
-                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                    <span>Submitting Request...</span>
-                    <i class="fas fa-heartbeat animate-pulse"></i>
-                </div>
-            `;
-            button.disabled = true;
-            button.classList.add('cursor-not-allowed', 'opacity-75');
+                requiredFields.forEach(field => {
+                    if (!formData.get(field)) {
+                        missingFields.push(field);
+                    }
+                });
 
-            // Make API call
-            fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.REQUEST, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (missingFields.length > 0) {
+                    throw new Error('Please fill in all required fields');
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
+
+                // Check confirmation checkbox
+                if (!formData.get('confirm')) {
+                    throw new Error('Please confirm the medical professional requirements');
+                }
+
+                // Send request to backend
+                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.REQUEST}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Show success message
                     messageDiv.innerHTML = `
-                        <div class="bg-green-50 border-2 border-green-200 rounded-2xl p-6 mb-6 animate-slide-up">
-                            <div class="flex items-start gap-4">
-                                <div class="bg-green-500 w-12 h-12 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-check-circle text-white text-xl"></i>
+                        <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-green-500 w-8 h-8 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white"></i>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-green-800 mb-2">Request Submitted Successfully! 🎉</h4>
-                                    <p class="text-green-700 mb-3">Your blood request has been received and is being processed by our medical team.</p>
-
-                                    <!-- Request Details Card -->
-                                    <div class="bg-white rounded-xl border border-green-200 p-4 mb-4">
-                                        <h5 class="text-green-800 font-semibold mb-3 flex items-center gap-2">
-                                            <i class="fas fa-clipboard-list"></i>
-                                            Request Details
-                                        </h5>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                            ${data.request_id ? `
-                                            <div class="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-                                                <i class="fas fa-hashtag text-green-600"></i>
-                                                <span class="font-medium">Request ID:</span>
-                                                <span class="font-bold text-green-800">#${data.request_id}</span>
-                                            </div>
-                                            ` : ''}
-                                            ${data.data ? `
-                                            <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                                                <i class="fas fa-user text-blue-600"></i>
-                                                <span class="font-medium">Patient:</span>
-                                                <span class="font-bold">${data.data.patient_name}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                                                <i class="fas fa-tint text-red-600"></i>
-                                                <span class="font-medium">Blood Type:</span>
-                                                <span class="font-bold text-red-700">${data.data.blood_type}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-orange-50 rounded-lg">
-                                                <i class="fas fa-exclamation-triangle text-orange-600"></i>
-                                                <span class="font-medium">Urgency:</span>
-                                                <span class="font-bold text-orange-700">${data.data.urgency}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
-                                                <i class="fas fa-hospital text-purple-600"></i>
-                                                <span class="font-medium">Hospital:</span>
-                                                <span class="font-bold">${data.data.hospital}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                                <i class="fas fa-map-marker-alt text-gray-600"></i>
-                                                <span class="font-medium">Location:</span>
-                                                <span class="font-bold">${data.data.location}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg">
-                                                <i class="fas fa-calendar text-indigo-600"></i>
-                                                <span class="font-medium">Required Date:</span>
-                                                <span class="font-bold">${data.data.required_date}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
-                                                <i class="fas fa-vials text-yellow-600"></i>
-                                                <span class="font-medium">Units Needed:</span>
-                                                <span class="font-bold">${data.data.units_needed}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-teal-50 rounded-lg">
-                                                <i class="fas fa-clock text-teal-600"></i>
-                                                <span class="font-medium">Response Time:</span>
-                                                <span class="font-bold text-teal-700">${data.data.estimated_response_time}</span>
-                                            </div>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-
-                                    <!-- Contact Information -->
-                                    <div class="bg-blue-50 rounded-xl border border-blue-200 p-4 mb-4">
-                                        <h5 class="text-blue-800 font-semibold mb-2 flex items-center gap-2">
-                                            <i class="fas fa-envelope"></i>
-                                            Confirmation Details
-                                        </h5>
-                                        <p class="text-blue-700 text-sm">
-                                            ✓ Confirmation email sent to: <strong>${formData.get('requester_email')}</strong><br>
-                                            ✓ Keep your Request ID <strong>#${data.request_id || 'N/A'}</strong> for reference
-                                        </p>
-                                    </div>
-
-                                    <!-- Next Steps -->
-                                    <div class="bg-white p-4 rounded-lg border border-green-200">
-                                        <p class="text-sm text-green-800 font-semibold mb-2 flex items-center gap-2">
-                                            <i class="fas fa-list-check"></i>
-                                            What happens next:
-                                        </p>
-                                        <ul class="text-sm text-green-700 space-y-1">
-                                            <li>✓ Medical verification (5-15 minutes)</li>
-                                            <li>✓ Donor matching based on location & blood type</li>
-                                            <li>✓ Direct contact with you for coordination</li>
-                                            <li>✓ Status updates via email and phone</li>
-                                        </ul>
-                                    </div>
-
-                                    <!-- Emergency Contact Reminder -->
-                                    ${data.data && (data.data.urgency === 'Critical' || data.data.urgency === 'High') ? `
-                                    <div class="bg-red-50 rounded-xl border border-red-200 p-4 mt-4">
-                                        <h5 class="text-red-800 font-semibold mb-2 flex items-center gap-2">
-                                            <i class="fas fa-phone-alt"></i>
-                                            Urgent Request - Immediate Action
-                                        </h5>
-                                        <p class="text-red-700 text-sm mb-2">
-                                            Since this is a <strong>${data.data.urgency}</strong> priority request, our team will contact you within <strong>${data.data.estimated_response_time}</strong>.
-                                        </p>
-                                        <a href="tel:+94729710871" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-                                            <i class="fas fa-phone"></i>
-                                            Call Emergency Line: +94-729-710-871
-                                        </a>
-                                    </div>
-                                    ` : ''}
+                                <div>
+                                    <h3 class="text-green-800 font-bold text-lg">Request Submitted Successfully!</h3>
+                                    <p class="text-green-600">Your blood request has been received. Request ID: ${result.request_id || 'N/A'}</p>
+                                    <p class="text-green-600 text-sm mt-1">You will be contacted shortly by our medical team.</p>
                                 </div>
                             </div>
                         </div>
                     `;
+
+                    // Reset form
                     this.reset();
-                    document.getElementById('required_date').min = new Date().toISOString().split('T')[0];
 
-                    // Scroll to success message
-                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Scroll to message
+                    messageDiv.scrollIntoView({ behavior: 'smooth' });
+
                 } else {
-                    // Enhanced error display
-                    const errorList = data.errors ? data.errors.map(error => `<li>• ${error}</li>`).join('') : `<li>• ${data.message || 'An unknown error occurred'}</li>`;
-
-                    messageDiv.innerHTML = `
-                        <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                            <div class="flex items-start gap-4">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-red-800 mb-2">Request Submission Failed</h4>
-                                    <p class="text-red-700 mb-3">Please review and correct the following issues:</p>
-
-                                    <div class="bg-white p-4 rounded-lg border border-red-200 mb-4">
-                                        <ul class="text-red-700 space-y-1">
-                                            ${errorList}
-                                        </ul>
-                                    </div>
-
-                                    <div class="bg-red-100 p-3 rounded-lg border border-red-200">
-                                        <p class="text-sm text-red-600 flex items-center gap-2">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>If the problem persists after correcting these issues, contact our support team at <strong>+94-729-710-871</strong></span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    throw new Error(result.message || 'Failed to submit request');
                 }
-            })
-            .catch(error => {
-                console.error('Request submission error:', error);
+
+            } catch (error) {
+                // Show error message
                 messageDiv.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                        <div class="flex items-start gap-4">
-                            <i class="fas fa-wifi text-red-600 text-2xl"></i>
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-500 w-8 h-8 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle text-white"></i>
+                            </div>
                             <div>
-                                <h4 class="text-xl font-bold text-red-800 mb-2">Connection Error</h4>
-                                <p class="text-red-700 mb-3">Unable to submit your request due to a network issue.</p>
-                                <div class="bg-white p-3 rounded-lg border border-red-200">
-                                    <p class="text-sm text-red-600">Please check your internet connection and try again. For urgent requests, call our emergency hotline: <strong>+94-729-710-871</strong></p>
-                                </div>
+                                <h3 class="text-red-800 font-bold text-lg">Error Submitting Request</h3>
+                                <p class="text-red-600">${error.message}</p>
                             </div>
                         </div>
                     </div>
                 `;
-            })
-            .finally(() => {
-                button.innerHTML = `
+
+                // Scroll to message
+                messageDiv.scrollIntoView({ behavior: 'smooth' });
+            } finally {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = `
                     <i class="fas fa-paper-plane text-xl"></i>
                     Submit Blood Request
                     <i class="fas fa-arrow-right text-lg"></i>
                 `;
-                button.disabled = false;
-                button.classList.remove('cursor-not-allowed', 'opacity-75');
-
-                // Scroll to message
-                if (messageDiv.innerHTML) {
-                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
+            }
         });
 
-        // Donor registration handling
-        document.getElementById('donorForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const button = document.getElementById('donorButton');
-            const messageDiv = document.getElementById('donorMessage');
-
-            // Clear previous messages
-            messageDiv.innerHTML = '';
-
-            // Validate form before submission
-            const formData = new FormData(this);
-            const validation = validateDonorForm(formData);
-
-            if (!validation.isValid) {
-                messageDiv.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                        <div class="flex items-start gap-4">
-                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                            <div>
-                                <h4 class="text-xl font-bold text-red-800 mb-2">Validation Error</h4>
-                                <ul class="text-red-700 space-y-1">
-                                    ${validation.errors.map(error => `<li>• ${error}</li>`).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // Enhanced loading state
-            button.innerHTML = `
-                <div class="flex items-center justify-center gap-3">
-                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                    <span>Registering Donor...</span>
-                    <i class="fas fa-heartbeat animate-pulse"></i>
-                </div>
-            `;
-            button.disabled = true;
-            button.classList.add('cursor-not-allowed', 'opacity-75');
-
-            // Make API call
-            fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.REGISTER, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    messageDiv.innerHTML = `
-                        <div class="bg-green-50 border-2 border-green-200 rounded-2xl p-6 mb-6 animate-slide-up">
-                            <div class="flex items-start gap-4">
-                                <div class="bg-green-500 w-12 h-12 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-check-circle text-white text-xl"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-green-800 mb-2">Registration Successful! 🎉</h4>
-                                    <p class="text-green-700 mb-3">Thank you for registering as a blood donor. Your willingness to help others is greatly appreciated.</p>
-
-                                    <!-- Donor Details Card -->
-                                    <div class="bg-white rounded-xl border border-green-200 p-4 mb-4">
-                                        <h5 class="text-green-800 font-semibold mb-3 flex items-center gap-2">
-                                            <i class="fas fa-user-check"></i>
-                                            Donor Details
-                                        </h5>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                            ${data.donor_id ? `
-                                            <div class="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-                                                <i class="fas fa-hashtag text-green-600"></i>
-                                                <span class="font-medium">Donor ID:</span>
-                                                <span class="font-bold text-green-800">#${data.donor_id}</span>
-                                            </div>
-                                            ` : ''}
-                                            <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                                                <i class="fas fa-user text-blue-600"></i>
-                                                <span class="font-medium">Name:</span>
-                                                <span class="font-bold">${formData.get('name')}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                                                <i class="fas fa-tint text-red-600"></i>
-                                                <span class="font-medium">Blood Type:</span>
-                                                <span class="font-bold text-red-700">${formData.get('blood_group')}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-orange-50 rounded-lg">
-                                                <i class="fas fa-phone-alt text-orange-600"></i>
-                                                <span class="font-medium">Contact:</span>
-                                                <span class="font-bold">${formData.get('contact')}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
-                                                <i class="fas fa-map-marker-alt text-purple-600"></i>
-                                                <span class="font-medium">Location:</span>
-                                                <span class="font-bold">${formData.get('location')}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                                <i class="fas fa-envelope text-gray-600"></i>
-                                                <span class="font-medium">Email:</span>
-                                                <span class="font-bold">${formData.get('email')}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Next Steps -->
-                                    <div class="bg-white p-4 rounded-lg border border-green-200">
-                                        <p class="text-sm text-green-800 font-semibold mb-2 flex items-center gap-2">
-                                            <i class="fas fa-list-check"></i>
-                                            What happens next:
-                                        </p>
-                                        <ul class="text-sm text-green-700 space-y-1">
-                                            <li>✓ Your registration will be reviewed by our medical team</li>
-                                            <li>✓ You will be contacted for confirmation and next steps</li>
-                                            <li>✓ Keep your Donor ID <strong>#${data.donor_id || 'N/A'}</strong> for reference</li>
-                                            <li>✓ You can now be found in donor searches immediately!</li>
-                                        </ul>
-                                    </div>
-
-                                    <!-- Search Link -->
-                                    <div class="bg-blue-50 rounded-xl border border-blue-200 p-4 mt-4">
-                                        <p class="text-blue-700 text-sm mb-2">
-                                            <i class="fas fa-search text-blue-600 mr-2"></i>
-                                            Your donor profile is now live and searchable!
-                                        </p>
-                                        <a href="search.html" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                                            <i class="fas fa-search"></i>
-                                            View in Search Results
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    this.reset();
-
-                    // Show notification for successful registration
-                    if (window.notifications) {
-                        notifications.showToast('success', 'Donor Registered', `Welcome ${formData.get('name')}! You are now registered as a ${formData.get('blood_group')} blood donor.`);
-                    }
-
-                    // Scroll to success message
-                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else {
-                    // Enhanced error display
-                    const errorList = data.errors ? data.errors.map(error => `<li>• ${error}</li>`).join('') : `<li>• ${data.message || 'An unknown error occurred'}</li>`;
-
-                    messageDiv.innerHTML = `
-                        <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                            <div class="flex items-start gap-4">
-                                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                                <div class="flex-1">
-                                    <h4 class="text-xl font-bold text-red-800 mb-2">Registration Failed</h4>
-                                    <p class="text-red-700 mb-3">Please review and correct the following issues:</p>
-
-                                    <div class="bg-white p-4 rounded-lg border border-red-200 mb-4">
-                                        <ul class="text-red-700 space-y-1">
-                                            ${errorList}
-                                        </ul>
-                                    </div>
-
-                                    <div class="bg-red-100 p-3 rounded-lg border border-red-200">
-                                        <p class="text-sm text-red-600 flex items-center gap-2">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>If the problem persists, contact our support team at <strong>+94-729-710-871</strong></span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error('Donor registration error:', error);
-                messageDiv.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-6">
-                        <div class="flex items-start gap-4">
-                            <i class="fas fa-wifi text-red-600 text-2xl"></i>
-                            <div>
-                                <h4 class="text-xl font-bold text-red-800 mb-2">Connection Error</h4>
-                                <p class="text-red-700 mb-3">Unable to register donor due to a network issue.</p>
-                                <div class="bg-white p-3 rounded-lg border border-red-200">
-                                    <p class="text-sm text-red-600">Please check your internet connection and try again.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })
-            .finally(() => {
-                button.innerHTML = `
-                    <i class="fas fa-user-plus text-xl"></i>
-                    Register as Donor
-                    <i class="fas fa-heart text-lg"></i>
-                `;
-                button.disabled = false;
-                button.classList.remove('cursor-not-allowed', 'opacity-75');
-
-                // Scroll to message
-                if (messageDiv.innerHTML) {
-                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        });
-
-        // Tab switching functionality
-        document.getElementById('requestTab').addEventListener('click', function() {
-            // Switch to request tab
-            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
-            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
-
-            document.getElementById('donorTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
-            document.getElementById('donorTab').classList.add('text-gray-600', 'hover:bg-gray-50');
-
-            // Show/hide sections
-            document.getElementById('requestSection').classList.remove('hidden');
-            document.getElementById('donorSection').classList.add('hidden');
-        });
-
-        document.getElementById('donorTab').addEventListener('click', function() {
-            // Switch to donor tab
-            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
-            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
-
-            document.getElementById('requestTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
-            document.getElementById('requestTab').classList.add('text-gray-600', 'hover:bg-gray-50');
-
-            // Show/hide sections
-            document.getElementById('donorSection').classList.remove('hidden');
-            document.getElementById('requestSection').classList.add('hidden');
-        });
-
-        // Donor form validation function
-        function validateDonorForm(formData) {
-            const errors = [];
-
-            // Required fields validation
-            const requiredFields = [
-                { field: 'name', label: 'Full Name' },
-                { field: 'age', label: 'Age' },
-                { field: 'gender', label: 'Gender' },
-                { field: 'blood_group', label: 'Blood Type' },
-                { field: 'contact', label: 'Phone Number' },
-                { field: 'location', label: 'Location' },
-                { field: 'email', label: 'Email Address' },
-                { field: 'password', label: 'Password' }
-            ];
-
-            requiredFields.forEach(({ field, label }) => {
-                const value = formData.get(field);
-                if (!value || value.trim() === '') {
-                    errors.push(`${label} is required`);
-                }
-            });
-
-            // Email validation
-            const email = formData.get('email');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push('Please enter a valid email address');
-            }
-
-            // Phone validation
-            const phone = formData.get('contact');
-            if (phone && !/^[\+]?[\d\s\-\(\)]{10,}$/.test(phone)) {
-                errors.push('Please enter a valid phone number (minimum 10 digits)');
-            }
-
-            // Age validation
-            const age = formData.get('age');
-            if (age && (age < 18 || age > 65)) {
-                errors.push('Age must be between 18 and 65');
-            }
-
-            // Password strength validation
-            const password = formData.get('password');
-            if (password && password.length < 8) {
-                errors.push('Password must be at least 8 characters long');
-            }
-
-            // Confirmation checkbox
-            const confirmed = formData.get('confirm');
-            if (!confirmed) {
-                errors.push('Please confirm the donor agreement and consent');
-            }
-
-            return {
-                isValid: errors.length === 0,
-                errors: errors
-            };
-        }
-
-        // Form validation function
-        function validateRequestForm(formData) {
-            const errors = [];
-
-            // Required fields validation
-            const requiredFields = [
-                { field: 'requester_name', label: 'Patient Name' },
-                { field: 'requester_contact', label: 'Contact Number' },
-                { field: 'requester_email', label: 'Email Address' },
-                { field: 'blood_group', label: 'Blood Type' },
-                { field: 'units_needed', label: 'Units Needed' },
-                { field: 'urgency', label: 'Urgency Level' },
-                { field: 'required_date', label: 'Required Date' },
-                { field: 'hospital', label: 'Hospital Name' },
-                { field: 'location', label: 'Location' }
-            ];
-
-            requiredFields.forEach(({ field, label }) => {
-                const value = formData.get(field);
-                if (!value || value.trim() === '') {
-                    errors.push(`${label} is required`);
-                }
-            });
-
-            // Email validation
-            const email = formData.get('requester_email');
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push('Please enter a valid email address');
-            }
-
-            // Phone validation
-            const phone = formData.get('requester_contact');
-            if (phone && !/^[\+]?[\d\s\-\(\)]{10,}$/.test(phone)) {
-                errors.push('Please enter a valid phone number (minimum 10 digits)');
-            }
-
-            // Date validation
-            const requiredDate = formData.get('required_date');
-            if (requiredDate) {
-                const selectedDate = new Date(requiredDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (selectedDate < today) {
-                    errors.push('Required date cannot be in the past');
-                }
-            }
-
-            // Confirmation checkbox
-            const confirmed = formData.get('confirm');
-            if (!confirmed) {
-                errors.push('Please confirm the medical professional acknowledgment');
-            }
-
-            return {
-                isValid: errors.length === 0,
-                errors: errors
-            };
-        }
+        // Set minimum date to today
+        document.getElementById('required_date').min = new Date().toISOString().split('T')[0];
     </script>
-
-    <style>
-        .priority-critical { animation: pulse 1s infinite; }
-        .priority-high .bg-red-50 { background: #fef2f2; border-color: #fecaca; }
-        .priority-medium .bg-red-50 { background: #fffbeb; border-color: #fde68a; }
-        .priority-low .bg-red-50 { background: #f0fdf4; border-color: #bbf7d0; }
-    </style>
 </body>
 </html>

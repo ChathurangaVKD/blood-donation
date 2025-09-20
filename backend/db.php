@@ -8,7 +8,7 @@ $username = "root";
 $password = "";
 $dbname = "blood_donation";
 
-// Try to connect to MySQL
+// Try to connect to MySQL with MySQLi (existing connection)
 $conn = @new mysqli($servername, $username, $password, $dbname);
 
 // If database doesn't exist, create it
@@ -40,6 +40,33 @@ if ($conn->connect_error) {
 
 $conn->set_charset("utf8mb4");
 
+// Create PDO connection for admin panel (needed for admin.php)
+try {
+    $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
+    $pdo = new PDO($dsn, $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false
+    ]);
+} catch (PDOException $e) {
+    // If PDO fails, try to create database and reconnect
+    try {
+        $temp_pdo = new PDO("mysql:host=$servername;charset=utf8mb4", $username, $password);
+        $temp_pdo->exec("CREATE DATABASE IF NOT EXISTS $dbname");
+        $pdo = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Database connection failed: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
 // Initialize database tables if they don't exist
 $tables_check = $conn->query("SHOW TABLES LIKE 'donors'");
 if ($tables_check->num_rows == 0) {
@@ -47,52 +74,46 @@ if ($tables_check->num_rows == 0) {
     $schema_file = __DIR__ . '/../database/schema.sql';
     if (file_exists($schema_file)) {
         $schema_sql = file_get_contents($schema_file);
-        if ($conn->multi_query($schema_sql)) {
-            do {
-                if ($result = $conn->store_result()) {
-                    $result->free();
-                }
-            } while ($conn->next_result());
-        }
 
-        // Import sample data
-        $sample_file = __DIR__ . '/../database/sample_data.sql';
-        if (file_exists($sample_file)) {
-            $sample_sql = file_get_contents($sample_file);
-            if ($conn->multi_query($sample_sql)) {
-                do {
-                    if ($result = $conn->store_result()) {
-                        $result->free();
+        // Clean up SQL for execution
+        $statements = array_filter(
+            array_map('trim', explode(';', $schema_sql)),
+            function($statement) {
+                return !empty($statement) && !preg_match('/^(--|\#)/', $statement);
+            }
+        );
+
+        foreach ($statements as $statement) {
+            if (!empty($statement)) {
+                try {
+                    $conn->query($statement);
+                } catch (Exception $e) {
+                    // Ignore table already exists errors
+                    if (strpos($e->getMessage(), 'already exists') === false) {
+                        error_log("Database setup error: " . $e->getMessage());
                     }
-                } while ($conn->next_result());
+                }
             }
         }
     }
 }
 
-// Simple university project functions
-if (!function_exists('sanitizeInput')) {
-    function sanitizeInput($data) {
-        return htmlspecialchars(strip_tags(trim($data)));
+// Utility function for input sanitization
+function sanitizeInput($data) {
+    if (is_array($data)) {
+        return array_map('sanitizeInput', $data);
     }
+    return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
 }
 
-if (!function_exists('hashPassword')) {
-    function hashPassword($password) {
-        return password_hash($password, PASSWORD_DEFAULT);
-    }
-}
-
-function verifyPassword($password, $hash) {
-    // Handle both hashed and plain passwords for university demo
-    if (strlen($hash) > 20) {
-        return password_verify($password, $hash);
-    }
-    return $password === $hash;
-}
-
-// Success indicator for university demo
-if (!headers_sent()) {
-    header('X-University-Demo: Ready');
+// Success message for development
+if (isset($_GET['test_db'])) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'Database connections established successfully',
+        'mysqli' => $conn ? true : false,
+        'pdo' => isset($pdo) ? true : false
+    ]);
+    exit();
 }
 ?>

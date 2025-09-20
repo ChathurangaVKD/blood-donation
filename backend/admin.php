@@ -3,11 +3,12 @@
 session_start();
 include 'db.php';
 
-// Set proper headers
+// Set proper headers for CORS and sessions
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: http://localhost:8080');
+header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 // Handle preflight OPTIONS request
 if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
@@ -54,23 +55,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['admin_action']) && $_P
             echo json_encode([
                 'success' => true,
                 'message' => 'Admin login successful',
-                'admin' => [
-                    'username' => $username,
-                    'login_time' => date('Y-m-d H:i:s')
-                ]
+                'admin_username' => $username,
+                'session_id' => session_id()
             ]);
         } else {
             throw new Exception("Invalid admin credentials");
         }
-        exit();
     } catch (Exception $e) {
         http_response_code(401);
         echo json_encode([
             'success' => false,
             'message' => $e->getMessage()
         ]);
-        exit();
     }
+    exit();
 }
 
 // Handle admin logout
@@ -78,208 +76,233 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['admin_action']) && $_P
     session_destroy();
     echo json_encode([
         'success' => true,
-        'message' => 'Logged out successfully'
+        'message' => 'Admin logout successful'
     ]);
     exit();
 }
 
-// For development/testing - allow temporary admin access with admin_key
-if (!isAdmin() && isset($_GET['admin_key']) && $_GET['admin_key'] === 'dev123') {
-    $_SESSION['admin_logged_in'] = true;
-    $_SESSION['admin_username'] = 'dev_admin';
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    try {
-        if (!isAdmin()) {
-            throw new Exception("Admin access required. Please login first.");
-        }
-
-        $action = sanitizeInput($_POST['action'] ?? '');
-
-        if ($action === 'verify_donor') {
-            $donor_id = (int)($_POST['donor_id'] ?? 0);
-            $verified = (int)($_POST['verified'] ?? 0);
-
-            if ($donor_id <= 0) {
-                throw new Exception("Invalid donor ID");
-            }
-
-            $stmt = $conn->prepare("UPDATE donors SET verified = ? WHERE id = ?");
-            $stmt->bind_param("ii", $verified, $donor_id);
-
-            if ($stmt->execute()) {
-                $status = $verified ? 'verified' : 'unverified';
-                echo json_encode([
-                    'success' => true,
-                    'message' => "Donor {$status} successfully."
-                ]);
-            } else {
-                throw new Exception("Error updating donor verification");
-            }
-            $stmt->close();
-
-        } elseif ($action === 'get_pending_donors') {
-            $stmt = $conn->prepare("SELECT id, name, email, blood_group, location, contact, age, gender, created_at FROM donors WHERE verified = 0 ORDER BY created_at DESC");
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $pending_donors = [];
-            while ($row = $result->fetch_assoc()) {
-                $pending_donors[] = $row;
-            }
-
-            echo json_encode([
-                'success' => true,
-                'pending_donors' => $pending_donors,
-                'count' => count($pending_donors)
-            ]);
-            $stmt->close();
-
-        } elseif ($action === 'dashboard_stats') {
-            // Get comprehensive dashboard statistics
-            $stats = [];
-
-            // Donor statistics
-            $result = $conn->query("SELECT 
-                COUNT(*) as total_donors,
-                SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_donors,
-                SUM(CASE WHEN verified = 0 THEN 1 ELSE 0 END) as pending_donors
-                FROM donors");
-            $stats['donors'] = $result->fetch_assoc();
-
-            // Request statistics
-            $result = $conn->query("SELECT 
-                COUNT(*) as total_requests,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_requests,
-                SUM(CASE WHEN status = 'fulfilled' THEN 1 ELSE 0 END) as fulfilled_requests,
-                SUM(CASE WHEN urgency = 'Critical' AND status = 'pending' THEN 1 ELSE 0 END) as critical_requests
-                FROM requests");
-            $stats['requests'] = $result->fetch_assoc();
-
-            // Inventory statistics
-            $result = $conn->query("SELECT 
-                COUNT(*) as total_units,
-                SUM(CASE WHEN status = 'available' AND expiry_date > CURDATE() THEN 1 ELSE 0 END) as available_units,
-                SUM(CASE WHEN expiry_date <= CURDATE() THEN 1 ELSE 0 END) as expired_units,
-                SUM(CASE WHEN DATEDIFF(expiry_date, CURDATE()) <= 7 AND expiry_date > CURDATE() THEN 1 ELSE 0 END) as expiring_soon
-                FROM inventory");
-            $stats['inventory'] = $result->fetch_assoc();
-
-            // Blood group distribution
-            $result = $conn->query("SELECT blood_group, COUNT(*) as count 
-                FROM inventory 
-                WHERE status = 'available' AND expiry_date > CURDATE() 
-                GROUP BY blood_group 
-                ORDER BY blood_group");
-            $stats['blood_distribution'] = [];
-            while ($row = $result->fetch_assoc()) {
-                $stats['blood_distribution'][] = $row;
-            }
-
-            echo json_encode([
-                'success' => true,
-                'stats' => $stats
-            ]);
-
-        } elseif ($action === 'update_request_status') {
-            $request_id = (int)($_POST['request_id'] ?? 0);
-            $status = sanitizeInput($_POST['status'] ?? '');
-
-            if ($request_id <= 0) {
-                throw new Exception("Invalid request ID");
-            }
-
-            $valid_statuses = ['pending', 'fulfilled', 'cancelled'];
-            if (!in_array($status, $valid_statuses)) {
-                throw new Exception("Invalid status");
-            }
-
-            $stmt = $conn->prepare("UPDATE requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->bind_param("si", $status, $request_id);
-
-            if ($stmt->execute()) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Request status updated successfully.'
-                ]);
-            } else {
-                throw new Exception("Error updating request status");
-            }
-            $stmt->close();
-
-        } else {
-            throw new Exception("Invalid action");
-        }
-
-    } catch (Exception $e) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
-    }
-
-} elseif ($_SERVER["REQUEST_METHOD"] == "GET") {
-    try {
-        if (!isAdmin()) {
-            throw new Exception("Admin access required. Please login first.");
-        }
-
-        $action = $_GET['action'] ?? '';
-
-        if ($action === 'donors') {
-            $verified = $_GET['verified'] ?? '';
-
-            $sql = "SELECT id, name, email, blood_group, location, contact, age, gender, verified, created_at, last_donation_date FROM donors";
-            $params = [];
-            $types = "";
-
-            if ($verified !== '') {
-                $sql .= " WHERE verified = ?";
-                $params[] = (int)$verified;
-                $types .= "i";
-            }
-
-            $sql .= " ORDER BY created_at DESC";
-
-            $stmt = $conn->prepare($sql);
-            if (!empty($params)) {
-                $stmt->bind_param($types, ...$params);
-            }
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            $donors = [];
-            while ($row = $result->fetch_assoc()) {
-                $donors[] = $row;
-            }
-
-            echo json_encode([
-                'success' => true,
-                'donors' => $donors
-            ]);
-            $stmt->close();
-
-        } else {
-            throw new Exception("Invalid action");
-        }
-
-    } catch (Exception $e) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
-    }
-
-} else {
-    http_response_code(405);
+// Handle session check
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] === 'check_session') {
     echo json_encode([
-        'success' => false,
-        'message' => 'Method not allowed'
+        'success' => true,
+        'logged_in' => isAdmin(),
+        'admin_username' => $_SESSION['admin_username'] ?? null,
+        'session_id' => session_id()
     ]);
+    exit();
 }
 
-$conn->close();
+// Check authentication for protected routes (skip for login and session check)
+if (!isset($_POST['admin_action']) && !isset($_GET['action']) || (isset($_GET['action']) && $_GET['action'] !== 'check_session')) {
+    if (!isAdmin()) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Admin authentication required',
+            'session_id' => session_id(),
+            'session_data' => $_SESSION
+        ]);
+        exit();
+    }
+}
+
+// Handle GET requests - List blood requests
+if ($_SERVER["REQUEST_METHOD"] == "GET") {
+    try {
+        $action = $_GET['action'] ?? 'list_requests';
+
+        switch ($action) {
+            case 'list_requests':
+                // Get filter parameters
+                $status = $_GET['status'] ?? '';
+                $urgency = $_GET['urgency'] ?? '';
+                $blood_group = $_GET['blood_group'] ?? '';
+                $limit = min((int)($_GET['limit'] ?? 50), 100); // Max 100 records
+                $offset = max((int)($_GET['offset'] ?? 0), 0);
+
+                // Build query with filters
+                $where_conditions = [];
+                $params = [];
+
+                if (!empty($status)) {
+                    $where_conditions[] = "status = ?";
+                    $params[] = $status;
+                }
+
+                if (!empty($urgency)) {
+                    $where_conditions[] = "urgency = ?";
+                    $params[] = $urgency;
+                }
+
+                if (!empty($blood_group)) {
+                    $where_conditions[] = "blood_group = ?";
+                    $params[] = $blood_group;
+                }
+
+                $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+                // Get total count
+                $count_sql = "SELECT COUNT(*) as total FROM requests $where_clause";
+                $count_stmt = $pdo->prepare($count_sql);
+                $count_stmt->execute($params);
+                $total_count = $count_stmt->fetch()['total'];
+
+                // Get requests with pagination
+                $sql = "SELECT id, requester_name, requester_contact, requester_email, blood_group, 
+                               location, urgency, hospital, required_date, units_needed, status, 
+                               notes, created_at, updated_at 
+                        FROM requests $where_clause 
+                        ORDER BY created_at DESC, urgency DESC 
+                        LIMIT ? OFFSET ?";
+
+                $params[] = $limit;
+                $params[] = $offset;
+
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $requests = $stmt->fetchAll();
+
+                echo json_encode([
+                    'success' => true,
+                    'data' => $requests,
+                    'pagination' => [
+                        'total' => $total_count,
+                        'limit' => $limit,
+                        'offset' => $offset,
+                        'has_more' => ($offset + $limit) < $total_count
+                    ]
+                ]);
+                break;
+
+            case 'stats':
+                // Get dashboard statistics
+                $stats_sql = "
+                    SELECT 
+                        COUNT(*) as total_requests,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_requests,
+                        SUM(CASE WHEN status = 'fulfilled' THEN 1 ELSE 0 END) as fulfilled_requests,
+                        SUM(CASE WHEN urgency = 'Critical' THEN 1 ELSE 0 END) as critical_requests,
+                        SUM(CASE WHEN urgency = 'High' THEN 1 ELSE 0 END) as high_requests,
+                        SUM(units_needed) as total_units_requested
+                    FROM requests
+                ";
+
+                $stats_stmt = $pdo->prepare($stats_sql);
+                $stats_stmt->execute();
+                $stats = $stats_stmt->fetch();
+
+                echo json_encode([
+                    'success' => true,
+                    'stats' => $stats
+                ]);
+                break;
+
+            default:
+                throw new Exception("Invalid action");
+        }
+
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+// Handle PUT requests - Update blood request status
+if ($_SERVER["REQUEST_METHOD"] == "PUT" || ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['_method']) && $_POST['_method'] === 'PUT')) {
+    try {
+        // Get PUT data
+        if ($_SERVER["REQUEST_METHOD"] == "PUT") {
+            $input = json_decode(file_get_contents('php://input'), true);
+        } else {
+            $input = $_POST;
+        }
+
+        $request_id = (int)($input['id'] ?? 0);
+        $new_status = sanitizeInput($input['status'] ?? '');
+        $admin_notes = sanitizeInput($input['admin_notes'] ?? '');
+
+        if ($request_id <= 0) {
+            throw new Exception("Invalid request ID");
+        }
+
+        if (!in_array($new_status, ['pending', 'fulfilled', 'cancelled'])) {
+            throw new Exception("Invalid status");
+        }
+
+        // Update the request
+        $update_sql = "UPDATE requests SET status = ?, notes = CONCAT(COALESCE(notes, ''), '\n[Admin Update by ', ?, ']: ', ?) WHERE id = ?";
+        $update_stmt = $pdo->prepare($update_sql);
+        $update_stmt->execute([$new_status, $_SESSION['admin_username'], $admin_notes, $request_id]);
+
+        if ($update_stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Request status updated successfully',
+                'request_id' => $request_id,
+                'new_status' => $new_status
+            ]);
+        } else {
+            throw new Exception("Request not found or no changes made");
+        }
+
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+// Handle DELETE requests - Delete blood request
+if ($_SERVER["REQUEST_METHOD"] == "DELETE" || ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['_method']) && $_POST['_method'] === 'DELETE')) {
+    try {
+        // Get DELETE data
+        if ($_SERVER["REQUEST_METHOD"] == "DELETE") {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $request_id = (int)($input['id'] ?? 0);
+        } else {
+            $request_id = (int)($_POST['id'] ?? 0);
+        }
+
+        if ($request_id <= 0) {
+            throw new Exception("Invalid request ID");
+        }
+
+        // Delete the request
+        $delete_sql = "DELETE FROM requests WHERE id = ?";
+        $delete_stmt = $pdo->prepare($delete_sql);
+        $delete_stmt->execute([$request_id]);
+
+        if ($delete_stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Request deleted successfully',
+                'request_id' => $request_id
+            ]);
+        } else {
+            throw new Exception("Request not found");
+        }
+
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+// Invalid request method
+http_response_code(405);
+echo json_encode([
+    'success' => false,
+    'message' => 'Method not allowed'
+]);
 ?>
