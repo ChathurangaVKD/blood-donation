@@ -146,7 +146,5 @@ if (!function_exists('hashPassword')) {
     }
 }
 
-function verifyPassword($password, $hash) {
-    return password_verify($password, $hash);
-}
+// Note: verifyPassword function is now defined in db.php to avoid conflicts
 ?>

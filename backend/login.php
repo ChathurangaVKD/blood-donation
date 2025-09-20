@@ -3,16 +3,6 @@
 session_start();
 include 'db.php';
 
-// Password verification function
-function verifyPassword($password, $hash) {
-    // If hash looks like bcrypt, use password_verify
-    if (strpos($hash, '$2y$') === 0 || strpos($hash, '$2a$') === 0 || strpos($hash, '$2x$') === 0) {
-        return password_verify($password, $hash);
-    }
-    // For plain text passwords (development only), compare directly
-    return $password === $hash;
-}
-
 // Set proper headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -50,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $user = $result->fetch_assoc();
 
-            // Verify password
+            // Verify password using the function from db.php
             if (verifyPassword($password, $user['password'])) {
                 // Set session variables
                 $_SESSION['user_id'] = $user['id'];

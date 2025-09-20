@@ -305,73 +305,65 @@
             }
         });
 
-        // Add real-time validation
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailField = document.getElementById('email');
-            const passwordField = document.getElementById('password');
+        // Simple fallback login if notifications.js fails to load
+        if (typeof notifications === 'undefined') {
+            console.warn('Notifications.js not loaded, using fallback login');
 
-            if (emailField) {
-                emailField.addEventListener('blur', function() {
-                    notifications.validateField(this, {
-                        required: true,
-                        email: true,
-                        label: 'Email'
-                    });
-                });
-
-                emailField.addEventListener('input', function() {
-                    // Clear error state on input
-                    if (this.classList.contains('field-error')) {
-                        this.classList.remove('field-error');
-                        const feedback = this.parentNode.querySelector('.form-feedback.error');
-                        if (feedback) feedback.remove();
-                    }
-                });
-            }
-
-            if (passwordField) {
-                passwordField.addEventListener('blur', function() {
-                    notifications.validateField(this, {
-                        required: true,
-                        label: 'Password'
-                    });
-                });
-
-                passwordField.addEventListener('input', function() {
-                    // Clear error state on input
-                    if (this.classList.contains('field-error')) {
-                        this.classList.remove('field-error');
-                        const feedback = this.parentNode.querySelector('.form-feedback.error');
-                        if (feedback) feedback.remove();
-                    }
-                });
-            }
-        });
-
-        // Handle "Remember me" functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const rememberCheckbox = document.getElementById('remember');
-            const emailField = document.getElementById('email');
-
-            // Load saved email if remember me was checked
-            if (emailField && localStorage.getItem('rememberedEmail')) {
-                emailField.value = localStorage.getItem('rememberedEmail');
-                if (rememberCheckbox) {
-                    rememberCheckbox.checked = true;
-                }
-            }
-
-            // Save/remove email based on remember me checkbox
-            if (rememberCheckbox && emailField) {
-                document.getElementById('loginForm').addEventListener('submit', function() {
-                    if (rememberCheckbox.checked) {
-                        localStorage.setItem('rememberedEmail', emailField.value);
+            // Create a simple fallback notifications object
+            window.notifications = {
+                showToast: function(type, title, message) {
+                    const messageDiv = document.getElementById('loginMessage');
+                    if (messageDiv) {
+                        const alertClass = type === 'error' ? 'bg-red-100 border-red-400 text-red-700' :
+                                         type === 'success' ? 'bg-green-100 border-green-400 text-green-700' :
+                                         'bg-blue-100 border-blue-400 text-blue-700';
+                        messageDiv.innerHTML = `
+                            <div class="border px-4 py-3 rounded ${alertClass}" role="alert">
+                                <strong class="font-bold">${title}:</strong>
+                                <span class="block sm:inline">${message}</span>
+                            </div>
+                        `;
                     } else {
-                        localStorage.removeItem('rememberedEmail');
+                        alert(`${title}: ${message}`);
                     }
-                });
-            }
-        });
+                },
+                setFormLoading: function(form, loading) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        if (loading) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
+                        } else {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
+                        }
+                    }
+                },
+                validateField: function(field, options) {
+                    let isValid = true;
+                    let message = '';
+
+                    if (options.required && !field.value.trim()) {
+                        isValid = false;
+                        message = `${options.label} is required`;
+                    } else if (options.email && field.value && !field.value.includes('@')) {
+                        isValid = false;
+                        message = 'Please enter a valid email address';
+                    }
+
+                    // Simple visual feedback
+                    if (!isValid) {
+                        field.classList.add('border-red-500');
+                        field.classList.remove('border-gray-300');
+                    } else {
+                        field.classList.remove('border-red-500');
+                        field.classList.add('border-gray-300');
+                    }
+
+                    return { isValid, message };
+                }
+            };
+        }
     </script>
 </body>
 </html>
