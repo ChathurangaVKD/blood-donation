@@ -2,6 +2,16 @@
 // register.php - Enhanced donor registration with proper validation and responses
 include 'db.php';
 
+// Helper function to sanitize input data
+function sanitizeInput($data) {
+    return htmlspecialchars(strip_tags(trim($data)));
+}
+
+// Helper function to hash passwords
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_DEFAULT);
+}
+
 // Set proper headers
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -10,6 +20,7 @@ header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit(0);
 }
 
@@ -141,14 +152,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo json_encode([
             'success' => false,
             'message' => 'An internal error occurred during registration. Please try again.',
-            'error_code' => 'REGISTRATION_ERROR'
+            'error_code' => 'REGISTRATION_ERROR',
+            'debug_info' => $e->getMessage()
         ]);
     }
 } else {
     http_response_code(405);
     echo json_encode([
         'success' => false,
-        'message' => 'Method not allowed'
+        'message' => 'Method not allowed. Please use POST method.'
     ]);
 }
 
