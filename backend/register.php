@@ -123,9 +123,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Hash password
         $hashed_password = hashPassword($password);
 
-        // Insert new donor with verified status true for immediate availability
-        $stmt = $conn->prepare("INSERT INTO donors (name, age, gender, blood_group, contact, location, email, password, medical_history, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
-        $stmt->bind_param("sissssss", $name, $age, $gender, $blood_group, $contact, $location, $email, $hashed_password, $medical_history);
+        // Check if medical_history column exists in the table
+        $column_check = $conn->query("SHOW COLUMNS FROM donors LIKE 'medical_history'");
+        $has_medical_history = $column_check->num_rows > 0;
+
+        if ($has_medical_history) {
+            // Insert new donor with medical_history
+            $stmt = $conn->prepare("INSERT INTO donors (name, age, gender, blood_group, contact, location, email, password, medical_history, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param("sisssssss", $name, $age, $gender, $blood_group, $contact, $location, $email, $hashed_password, $medical_history);
+        } else {
+            // Insert new donor without medical_history (for backward compatibility)
+            $stmt = $conn->prepare("INSERT INTO donors (name, age, gender, blood_group, contact, location, email, password, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)");
+            $stmt->bind_param("sissssss", $name, $age, $gender, $blood_group, $contact, $location, $email, $hashed_password);
+        }
 
         if (!$stmt->execute()) {
             throw new Exception("Failed to register donor: " . $stmt->error);
