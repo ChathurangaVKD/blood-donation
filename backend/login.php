@@ -1,13 +1,20 @@
 <?php
-// login.php - Enhanced with security features
+// login.php - Enhanced with security features and proper session handling
+// Configure session settings
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
+ini_set('session.cookie_samesite', 'Lax');
+
 session_start();
 include 'db.php';
 
-// Set proper headers
+// Set proper headers for session handling
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: http://localhost:8080');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
 
 // Handle preflight OPTIONS request
 if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
@@ -42,12 +49,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Verify password using the function from db.php
             if (verifyPassword($password, $user['password'])) {
+                // Clear any existing session data
+                session_regenerate_id(true);
+
                 // Set session variables
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['blood_group'] = $user['blood_group'];
                 $_SESSION['logged_in'] = true;
+                $_SESSION['login_time'] = time();
+
+                // Debug: Log session data
+                error_log("Login successful - Session ID: " . session_id());
+                error_log("Session data after login: " . print_r($_SESSION, true));
 
                 echo json_encode([
                     'success' => true,
@@ -59,7 +74,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'blood_group' => $user['blood_group'],
                         'location' => $user['location'],
                         'contact' => $user['contact']
-                    ]
+                    ],
+                    'session_id' => session_id()
                 ]);
             } else {
                 // Add a small delay to prevent brute force attacks

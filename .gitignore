@@ -1,4 +1,4 @@
-# System Files
+# Operating System Files
 .DS_Store
 .DS_Store?
 ._*
@@ -6,26 +6,70 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# IDE Files
-.idea/
+# IDE and Editor Files
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# Logs
+# Log Files
 *.log
-server.log
-server.pid
-
-# Environment Variables
-.env
-.env.local
-
-# Docker Volumes (optional)
-# mysql_data/
+error.log
+access.log
 
 # Temporary Files
+tmp/
+temp/
 *.tmp
 *.temp
+
+# PHP Files
+composer.phar
+vendor/
+
+# Database Files
+*.sqlite
+*.db
+
+# Cache Files
+cache/
+*.cache
+
+# Session Files
+sessions/
+
+# Upload Files
+uploads/
+files/
+
+# Environment Files
+.env
+.env.local
+.env.production
+
+# Backup Files
+*.backup
+*.bak
+*.old
+
+# Cookie Files
+cookies.txt
+
+# Development Files
+test_*.php
+debug_*.php
+*_test.php
+*_debug.php
+
+# Node.js (if used in future)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build Files
+dist/
+build/

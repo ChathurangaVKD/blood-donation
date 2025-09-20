@@ -1,252 +1,173 @@
-# Blood Donation System
+# BloodLink - Blood Donation Management System
 
-A comprehensive web-based blood donation management system built with PHP and MySQL, designed for easy deployment using PHP's built-in server.
+A comprehensive web-based blood donation management system that connects donors with those in need of blood transfusions.
 
 ## 🩸 Features
 
-- **Donor Management**: Register and manage blood donors with eligibility tracking
-- **Blood Inventory**: Track blood units with expiry dates and availability status
-- **Search System**: Advanced search for donors and blood inventory by type and location
-- **Request Management**: Handle blood requests from hospitals and medical centers
-- **Admin Panel**: Administrative interface for system management
-- **Real-time Filtering**: Dynamic search with multiple filter options
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **PHP 7.4+** with mysqli extension
-- **MySQL 5.7+** or MariaDB
-- Web browser
-
-### Installation & Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd BloodDonationSystem
-   ```
-
-2. **Configure Database**
-   - Ensure MySQL is running on `localhost:3306`
-   - Default credentials: `root` with no password
-   - Edit `database/config.php` if needed
-
-3. **Start the System**
-   
-   **On Linux/macOS:**
-   ```bash
-   ./start.sh
-   ```
-   
-   **On Windows:**
-   ```batch
-   start.bat
-   ```
-
-The startup script will:
-- Set up the database with comprehensive sample data
-- Start the backend server on `http://localhost:8081`
-- Start the frontend server on `http://localhost:8080`
-- Open the frontend at `http://localhost:8080` in your browser
-
-### How It Works
-
-- **Frontend**: PHP Built-in Server on `localhost:8080` serves HTML/CSS/JS files
-- **Backend**: PHP Built-in Server on `localhost:8081` serves the API
-- **Database**: MySQL stores all donor, inventory, and request data
-
-Both frontend and backend now run on separate PHP Built-in Server instances!
+- **Donor Registration & Management**: Complete donor profile system with blood type, location, and availability tracking
+- **Blood Request System**: Submit and manage blood requests with urgency levels and hospital details
+- **Smart Donor Search**: Find compatible donors based on blood type, location, and availability
+- **User Dashboard**: Personal profile management with donation history and request tracking
+- **Admin Panel**: Administrative interface for managing users, requests, and inventory
+- **Responsive Design**: Modern, mobile-friendly interface built with Tailwind CSS
 
 ## 📁 Project Structure
 
 ```
-BloodDonationSystem/
-├── backend/                 # PHP API backend
-│   ├── admin.php           # Admin panel
-│   ├── db.php              # Database connection
-│   ├── donations.php       # Donations management
-│   ├── inventory.php       # Blood inventory API
-│   ├── login.php           # User authentication
-│   ├── register.php        # User registration
-│   ├── request.php         # Blood requests API
-│   └── search.php          # Search functionality
-├── frontend/               # Frontend web interface
-│   ├── config.js           # API configuration
-│   ├── contact.html        # Contact page
-│   ├── index.html          # Main homepage
-│   ├── login.html          # Login interface
-│   ├── notifications.js    # Notification system
-│   ├── register.html       # Registration form
-│   ├── request.html        # Blood request form
-│   ├── script.js           # Main JavaScript
-│   ├── search.html         # Search interface
-│   └── style.css           # Styles
-├── database/               # Database setup
-│   ├── config.php          # Database configuration
-│   ├── reset_and_populate.php # Database setup script
-│   ├── sample_data.sql     # Sample data
-│   └── schema.sql          # Database schema
-├── start.sh               # Linux/macOS startup script
-├── start.bat              # Windows startup script
-└── README.md              # This file
+blood-donation/
+├── frontend/               # Frontend HTML, CSS, JS files
+│   ├── index.html         # Home page
+│   ├── login.html         # User login
+│   ├── register.html      # Donor registration
+│   ├── monitor.html       # User dashboard/profile
+│   ├── request.html       # Blood request form
+│   ├── search.html        # Donor search
+│   ├── contact.html       # Contact information
+│   ├── admin.html         # Admin dashboard
+│   ├── style.css          # Main stylesheet
+│   ├── script.js          # Main JavaScript
+│   ├── monitor.js         # Dashboard functionality
+│   ├── notifications.js   # Notification system
+│   └── config.js          # Frontend configuration
+├── backend/               # PHP backend API
+│   ├── db.php            # Database connection & utilities
+│   ├── config.php        # Backend configuration
+│   ├── login.php         # Authentication API
+│   ├── logout.php        # Logout functionality
+│   ├── register.php      # Registration API
+│   ├── session_check.php # Session validation
+│   ├── monitor.php       # Dashboard data API
+│   ├── request.php       # Blood requests API
+│   ├── search.php        # Donor search API
+│   ├── admin.php         # Admin functionality
+│   ├── donations.php     # Donation tracking
+│   ├── inventory.php     # Blood inventory management
+│   └── create_demo_user.php # Demo user creation
+├── database/             # Database setup files
+│   ├── schema.sql        # Database structure
+│   ├── sample_data.sql   # Sample data for testing
+│   └── config.php        # Database configuration
+├── index.php             # Main server router
+├── start.sh              # Server startup script (Unix/macOS)
+├── README.md             # This file
+└── .gitignore            # Git ignore rules
 ```
+
+## 🚀 Quick Start
+
+### Prerequisites
+- PHP 7.4 or higher
+- MySQL 5.7 or higher
+- Modern web browser
+
+### Installation
+
+1. **Clone or download the project**
+   ```bash
+   git clone <repository-url>
+   cd blood-donation
+   ```
+
+2. **Set up the database**
+   - Start your MySQL server
+   - Create a new database named `blood_donation`
+   - Import the schema: `mysql -u root -p blood_donation < database/schema.sql`
+   - (Optional) Import sample data: `mysql -u root -p blood_donation < database/sample_data.sql`
+
+3. **Configure database connection**
+   - Edit `backend/db.php` with your database credentials
+   - Update `database/config.php` if needed
+
+4. **Start the server**
+   ```bash
+   # On macOS/Linux
+   chmod +x start.sh
+   ./start.sh
+   
+   # Or manually
+   php -S localhost:8080 index.php
+   ```
+
+5. **Access the application**
+   - Open your browser and go to `http://localhost:8080`
+   - Create a new account or use the demo user creation feature
 
 ## 🔧 Configuration
 
-### Database Settings
-Edit `database/config.php` to customize database connection:
-
+### Database Configuration
+Edit `backend/db.php` to match your database setup:
 ```php
-class Config {
-    const DB_HOST = 'localhost';
-    const DB_USERNAME = 'root';
-    const DB_PASSWORD = '';
-    const DB_NAME = 'blood_donation';
-    const DB_PORT = 3306;
-}
+$servername = "localhost";
+$username = "root";
+$password = "your_password";
+$dbname = "blood_donation";
 ```
 
-### API Configuration
-The frontend connects to the backend via `frontend/config.js`:
+### Frontend Configuration
+Modify `frontend/config.js` for API endpoints and other settings.
 
-```javascript
-const CONFIG = {
-    API_BASE_URL: 'http://localhost:8081',
-    ENDPOINTS: {
-        REGISTER: '/register.php',
-        LOGIN: '/login.php',
-        REQUEST: '/request.php',
-        SEARCH: '/search.php',
-        // ...
-    }
-};
-```
+## 📊 Database Schema
 
-## 📊 Sample Data
+The system uses the following main tables:
+- `donors` - Donor profiles and information
+- `requests` - Blood requests and their status
+- `donations` - Donation history tracking
+- `inventory` - Blood bank inventory management
 
-The system includes comprehensive sample data:
+## 🛡️ Security Features
 
-- **29 Blood Donors** across all blood types (A+, A-, B+, B-, AB+, AB-, O+, O-)
-- **47 Blood Inventory Units** with realistic expiry dates
-- **5 Blood Requests** from various medical facilities
-- **Multiple Locations** across major US cities
+- Password hashing using PHP's `password_hash()`
+- SQL injection prevention with prepared statements
+- Session-based authentication
+- CORS protection for API endpoints
+- Input validation and sanitization
 
-### Blood Type Distribution
-- **O+/O-**: Universal donors (8 donors, 13 units)
-- **A+/A-**: Common types (8 donors, 12 units)
-- **B+/B-**: Less common (6 donors, 10 units)
-- **AB+/AB-**: Rare types (7 donors, 9 units)
+## 🎨 Technologies Used
 
-## 🎯 Usage
+- **Frontend**: HTML5, CSS3, JavaScript ES6+, Tailwind CSS, Font Awesome
+- **Backend**: PHP 7.4+, MySQLi
+- **Database**: MySQL 5.7+
+- **Server**: PHP Built-in Server (Development)
 
-### For Donors
-1. **Register**: Create account with blood type and contact info
-2. **Login**: Access donor dashboard
-3. **Update Status**: Track donation history and eligibility
+## 🔄 API Endpoints
 
-### For Blood Banks
-1. **Search**: Find donors by blood type and location
-2. **Inventory**: Check available blood units
-3. **Requests**: Submit blood requests for patients
+### Authentication
+- `POST /backend/login.php` - User login
+- `POST /backend/logout.php` - User logout
+- `GET /backend/session_check.php` - Check login status
 
-### For Administrators
-- Access admin panel at: `http://localhost:8081/admin.php`
-- Default credentials: `admin` / `admin123`
-- Manage donors, inventory, and requests
+### User Management
+- `POST /backend/register.php` - Register new donor
+- `GET /backend/monitor.php` - Get user dashboard data
 
-## 🔍 Search Features
+### Blood Requests
+- `POST /backend/request.php` - Submit blood request
+- `GET /backend/request.php` - Get user's requests
 
-The search system supports:
+### Donor Search
+- `GET /backend/search.php` - Search for donors
 
-- **Blood Type Filtering**: Search by specific blood groups
-- **Location Search**: Find donors/inventory by city
-- **Search Types**: 
-  - Donors Only
-  - Inventory Only  
-  - Both (default)
-- **Real-time Results**: Dynamic filtering as you type
+### Admin Functions
+- `GET /backend/admin.php` - Admin dashboard data
+- `POST /backend/admin.php` - Admin actions
 
-## 🏥 API Endpoints
+## 🧪 Development
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/register.php` | POST | Register new donor |
-| `/login.php` | POST | User authentication |
-| `/search.php` | GET | Search donors/inventory |
-| `/request.php` | POST/GET | Blood requests |
-| `/inventory.php` | GET | Blood inventory |
-| `/donations.php` | GET | Donation history |
-| `/admin.php` | GET | Admin panel |
-
-### Search API Example
-```
-GET /search.php?blood_group=O-&location=New York&search_type=both
-```
-
-## 🛠️ Development
-
-### Manual Setup
-If you prefer manual setup instead of using the startup scripts:
-
-1. **Start Backend Server**
-   ```bash
-   cd backend
-   php -S localhost:8081
-   ```
-
-2. **Setup Database**
-   ```bash
-   cd database
-   php reset_and_populate.php
-   ```
-
-3. **Open Frontend**
-   Open `frontend/index.html` in your browser
-
-### Adding Sample Data
-To reset and repopulate the database:
+### Creating Demo Data
+Run the demo user creation script:
 ```bash
-cd database
-php reset_and_populate.php
+curl http://localhost:8080/backend/create_demo_user.php
 ```
 
-## 🔒 Security Notes
+### Testing
+The system includes comprehensive error handling and logging for easier debugging.
 
-- Change default admin password in production
-- Update database credentials for production use
-- Enable HTTPS for production deployment
-- Validate and sanitize all user inputs
+## 📱 Mobile Support
 
-## 📱 Browser Compatibility
-
-- Chrome 60+
-- Firefox 55+
-- Safari 12+
-- Edge 79+
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Database Connection Failed**
-- Ensure MySQL is running on localhost:3306
-- Check database credentials in `database/config.php`
-- Verify PHP mysqli extension is installed
-
-**Backend Server Not Starting**
-- Check if port 8081 is available
-- Ensure PHP is installed and in PATH
-- Try running: `php --version`
-
-**Search Not Working**
-- Verify backend server is running
-- Check browser console for JavaScript errors
-- Ensure database has sample data
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
+The application is fully responsive and works on:
+- Desktop browsers (Chrome, Firefox, Safari, Edge)
+- Mobile browsers (iOS Safari, Android Chrome)
+- Tablet devices
 
 ## 🤝 Contributing
 
@@ -256,6 +177,14 @@ This project is open source and available under the [MIT License](LICENSE).
 4. Test thoroughly
 5. Submit a pull request
 
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 📞 Support
+
+For support or questions, please contact the development team or create an issue in the repository.
+
 ---
 
-**Built with ❤️ for the blood donation community**
+**BloodLink** - Connecting lives through blood donation 🩸❤️
