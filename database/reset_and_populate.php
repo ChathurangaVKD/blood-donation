@@ -29,18 +29,23 @@ class DatabaseReset {
             }
             echo "   ✅ Connected to database '{$this->dbname}'\n\n";
 
-            // Step 2: Clear existing data safely
-            echo "2. 🧹 Clearing existing data...\n";
+            // Step 2: Create database schema
+            echo "2. 🏗️  Creating database schema...\n";
+            $this->createSchema($conn);
+            echo "   ✅ Database schema created\n\n";
+
+            // Step 3: Clear existing data safely
+            echo "3. 🧹 Clearing existing data...\n";
             $this->clearExistingData($conn);
             echo "   ✅ Existing data cleared\n\n";
 
-            // Step 3: Populate with comprehensive sample data
-            echo "3. 📊 Populating with comprehensive sample data...\n";
+            // Step 4: Populate with comprehensive sample data
+            echo "4. 📊 Populating with comprehensive sample data...\n";
             $this->populateComprehensiveData($conn);
             echo "   ✅ Sample data populated successfully\n\n";
 
-            // Step 4: Verify data
-            echo "4. 🔍 Verifying data integrity...\n";
+            // Step 5: Verify data
+            echo "5. 🔍 Verifying data integrity...\n";
             $this->verifyData($conn);
             echo "   ✅ Data verification complete\n\n";
 
@@ -55,6 +60,43 @@ class DatabaseReset {
         }
     }
 
+    private function createSchema($conn) {
+        // Read and execute the schema file
+        $schemaPath = __DIR__ . '/schema.sql';
+        if (!file_exists($schemaPath)) {
+            throw new Exception("Schema file not found at: $schemaPath");
+        }
+
+        $schema = file_get_contents($schemaPath);
+        if ($schema === false) {
+            throw new Exception("Failed to read schema file");
+        }
+
+        // Split the schema into individual statements and execute them one by one
+        $statements = preg_split('/;(\s*\n|$)/', $schema, -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($statements as $statement) {
+            $statement = trim($statement);
+            if (!empty($statement) && substr($statement, 0, 2) !== '--') {
+                $result = $conn->query($statement);
+                if (!$result) {
+                    echo "   ⚠️  Failed statement: " . substr($statement, 0, 100) . "...\n";
+                    echo "   ⚠️  Error: " . $conn->error . "\n";
+                    // Continue with other statements instead of failing completely
+                } else {
+                    // Check if this was a CREATE TABLE statement
+                    if (stripos($statement, 'CREATE TABLE') !== false) {
+                        preg_match('/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?`?(\w+)`?/i', $statement, $matches);
+                        if (isset($matches[1])) {
+                            echo "   ✅ Created table: {$matches[1]}\n";
+                        }
+                    }
+                }
+            }
+        }
+        echo "   ✅ Schema processing completed\n";
+    }
+
     private function clearExistingData($conn) {
         // Disable foreign key checks temporarily
         $conn->query("SET FOREIGN_KEY_CHECKS = 0");
@@ -62,13 +104,24 @@ class DatabaseReset {
         // Clear tables in correct order to handle foreign key constraints
         $tables = ['request_fulfillments', 'donations', 'requests', 'inventory', 'donors'];
         foreach ($tables as $table) {
-            $conn->query("DELETE FROM $table");
-            echo "   🗑️  Cleared table: $table\n";
+            // Check if table exists before trying to delete from it
+            $result = $conn->query("SHOW TABLES LIKE '$table'");
+            if ($result && $result->num_rows > 0) {
+                $conn->query("DELETE FROM $table");
+                echo "   🗑️  Cleared table: $table\n";
+            } else {
+                echo "   ⚠️  Table $table does not exist, skipping...\n";
+            }
         }
 
-        // Clear admins except the default one
-        $conn->query("DELETE FROM admins WHERE id > 1");
-        echo "   🗑️  Cleared additional admin users\n";
+        // Clear admins except the default one (if table exists)
+        $result = $conn->query("SHOW TABLES LIKE 'admins'");
+        if ($result && $result->num_rows > 0) {
+            $conn->query("DELETE FROM admins WHERE id > 1");
+            echo "   🗑️  Cleared additional admin users\n";
+        } else {
+            echo "   ⚠️  Admins table does not exist, skipping...\n";
+        }
 
         // Re-enable foreign key checks
         $conn->query("SET FOREIGN_KEY_CHECKS = 1");

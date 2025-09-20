@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS donors (
     last_donation_date DATE NULL,
     medical_history TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_blood_group (blood_group),
+    INDEX idx_location (location)
 );
 
 -- Blood requests table
@@ -36,7 +38,10 @@ CREATE TABLE IF NOT EXISTS requests (
     status ENUM('pending', 'fulfilled', 'cancelled') DEFAULT 'pending',
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_blood_group (blood_group),
+    INDEX idx_status (status),
+    INDEX idx_urgency (urgency)
 );
 
 -- Blood inventory table
@@ -51,20 +56,13 @@ CREATE TABLE IF NOT EXISTS inventory (
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE SET NULL
+    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE SET NULL,
+    INDEX idx_blood_group (blood_group),
+    INDEX idx_status (status),
+    INDEX idx_expiry_date (expiry_date)
 );
 
--- Admin users table
-CREATE TABLE IF NOT EXISTS admins (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'super_admin') DEFAULT 'admin',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Donations log table
+-- Donations table (track individual donations)
 CREATE TABLE IF NOT EXISTS donations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     donor_id INT NOT NULL,
@@ -72,38 +70,37 @@ CREATE TABLE IF NOT EXISTS donations (
     blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NOT NULL,
     units_donated INT DEFAULT 1,
     location VARCHAR(100) NOT NULL,
-    medical_checkup_passed BOOLEAN DEFAULT TRUE,
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE CASCADE
+    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE CASCADE,
+    INDEX idx_donor_id (donor_id),
+    INDEX idx_donation_date (donation_date)
 );
 
--- Request fulfillment tracking
+-- Request fulfillments table (track how requests are fulfilled)
 CREATE TABLE IF NOT EXISTS request_fulfillments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     request_id INT NOT NULL,
-    inventory_id INT NULL,
-    donor_id INT NULL,
-    fulfilled_date DATE NOT NULL,
-    units_provided INT DEFAULT 1,
+    inventory_id INT NOT NULL,
+    units_fulfilled INT DEFAULT 1,
+    fulfilled_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     notes TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE,
-    FOREIGN KEY (inventory_id) REFERENCES inventory(id) ON DELETE SET NULL,
-    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE SET NULL
+    FOREIGN KEY (inventory_id) REFERENCES inventory(id) ON DELETE CASCADE,
+    INDEX idx_request_id (request_id),
+    INDEX idx_inventory_id (inventory_id)
 );
 
--- Insert default admin user (password: admin123 - should be changed in production)
-INSERT INTO admins (username, email, password, role) VALUES
-('admin', 'admin@blooddonation.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'super_admin');
+-- Admins table
+CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
--- Create indexes for better performance
-CREATE INDEX idx_donors_blood_group ON donors(blood_group);
-CREATE INDEX idx_donors_location ON donors(location);
-CREATE INDEX idx_donors_verified ON donors(verified);
-CREATE INDEX idx_requests_blood_group ON requests(blood_group);
-CREATE INDEX idx_requests_status ON requests(status);
-CREATE INDEX idx_requests_urgency ON requests(urgency);
-CREATE INDEX idx_inventory_blood_group ON inventory(blood_group);
-CREATE INDEX idx_inventory_status ON inventory(status);
-CREATE INDEX idx_inventory_expiry ON inventory(expiry_date);
+-- Insert default admin user
+INSERT IGNORE INTO admins (id, username, password, email) VALUES
+(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@bloodbank.com');
