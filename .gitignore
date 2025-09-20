@@ -1,0 +1,31 @@
+# System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+server.log
+server.pid
+
+# Environment Variables
+.env
+.env.local
+
+# Docker Volumes (optional)
+# mysql_data/
+
+# Temporary Files
+*.tmp
+*.temp
