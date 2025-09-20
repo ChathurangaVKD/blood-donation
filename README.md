@@ -15,8 +15,12 @@ BloodDonationSystem/
 ├── docker-compose.yml            # Docker services configuration
 ├── Dockerfile                    # Web server container definition
 ├── index.html                    # Welcome page with auto-redirect
-├── start.sh                      # System startup script
-├── stop.sh                       # System shutdown script
+├── start.sh                      # System startup script (macOS/Linux)
+├── start.bat                     # System startup script (Windows Command Prompt)
+├── start.ps1                     # System startup script (Windows PowerShell)
+├── stop.sh                       # System shutdown script (macOS/Linux)
+├── stop.bat                      # System shutdown script (Windows Command Prompt)
+├── stop.ps1                      # System shutdown script (Windows PowerShell)
 ├── frontend/                     # Frontend application
 │   ├── index.html               # Homepage
 │   ├── login.html               # User login page
@@ -64,6 +68,8 @@ cd BloodDonationSystem
 ```
 
 ### Step 2: Verify Docker Installation
+
+#### For macOS/Linux:
 ```bash
 # Check if Docker is installed and running
 docker --version
@@ -71,6 +77,20 @@ docker-compose --version
 
 # You should see version numbers for both commands
 ```
+
+#### For Windows (Command Prompt):
+```cmd
+docker --version
+docker-compose --version
+```
+
+#### For Windows (PowerShell):
+```powershell
+docker --version
+docker-compose --version
+```
+
+**Note**: You should see version numbers for both commands on all platforms. If you get "command not found" errors, please install Docker Desktop and ensure it's running.
 
 ### Step 3: Make Scripts Executable (macOS/Linux)
 ```bash
@@ -80,12 +100,32 @@ chmod +x start.sh stop.sh
 ## 🚀 Starting the Application
 
 ### Quick Start (Recommended)
+
+#### For macOS/Linux:
 ```bash
 # Navigate to project directory
 cd BloodDonationSystem
 
 # Start the entire system
 ./start.sh
+```
+
+#### For Windows (Command Prompt):
+```cmd
+# Navigate to project directory
+cd BloodDonationSystem
+
+# Start the entire system
+start.bat
+```
+
+#### For Windows (PowerShell):
+```powershell
+# Navigate to project directory
+cd BloodDonationSystem
+
+# Start the entire system
+.\start.ps1
 ```
 
 ### Manual Start (Alternative)
@@ -288,8 +328,20 @@ docker-compose logs -f mysql
 ## 🛑 Stopping the Application
 
 ### Using the Stop Script
+
+#### For macOS/Linux:
 ```bash
 ./stop.sh
+```
+
+#### For Windows (Command Prompt):
+```cmd
+stop.bat
+```
+
+#### For Windows (PowerShell):
+```powershell
+.\stop.ps1
 ```
 
 ### Manual Stop
