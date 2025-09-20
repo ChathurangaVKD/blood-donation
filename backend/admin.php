@@ -93,7 +93,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['acti
 }
 
 // Check authentication for protected routes (skip for login and session check)
-if (!isset($_POST['admin_action']) && !isset($_GET['action']) || (isset($_GET['action']) && $_GET['action'] !== 'check_session')) {
+$is_login_request = isset($_POST['admin_action']) && $_POST['admin_action'] === 'login';
+$is_session_check = isset($_GET['action']) && $_GET['action'] === 'check_session';
+
+if (!$is_login_request && !$is_session_check) {
     if (!isAdmin()) {
         http_response_code(401);
         echo json_encode([

@@ -431,22 +431,17 @@
 
         async function loadStats() {
             try {
-                console.log('Loading stats...');
                 const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}?action=stats`, {
                     credentials: 'include'
                 });
-                console.log('Stats response:', response);
                 const result = await response.json();
-                console.log('Stats result:', result);
 
                 if (result.success) {
                     const stats = result.stats;
-                    console.log('Stats data:', stats);
                     document.getElementById('totalRequests').textContent = stats.total_requests || 0;
                     document.getElementById('pendingRequests').textContent = stats.pending_requests || 0;
                     document.getElementById('criticalRequests').textContent = stats.critical_requests || 0;
                     document.getElementById('fulfilledRequests').textContent = stats.fulfilled_requests || 0;
-                    console.log('Stats updated successfully');
                 } else {
                     console.error('Stats request failed:', result);
                 }
