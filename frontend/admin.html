@@ -91,9 +91,10 @@
     <!-- Admin Dashboard -->
     <div id="adminDashboard" class="hidden">
         <!-- Header -->
-        <header class="bg-gradient-to-r from-blood-800 via-blood-700 to-red-600 shadow-2xl">
-            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-20">
+        <header class="bg-gradient-to-r from-blood-800 via-blood-700 to-red-600 shadow-lg sticky top-0 z-40">
+            <nav class="w-full px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20 w-full">
+                    <!-- Left side - Logo and Title -->
                     <div class="flex items-center">
                         <div class="text-white font-bold text-3xl flex items-center gap-3">
                             <div class="bg-white bg-opacity-20 p-2 rounded-xl">
@@ -102,12 +103,10 @@
                             Admin Dashboard
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span class="text-white opacity-80">
-                            <i class="fas fa-user mr-2"></i>
-                            Welcome, <span id="adminWelcome">Admin</span>
-                        </span>
-                        <button id="logoutButton" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+
+                    <!-- Right side - User info and controls -->
+                    <div class="flex items-center gap-6">
+                        <button id="logoutButton" class="text-white hover:bg-white hover:bg-opacity-20 px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center">
                             <i class="fas fa-sign-out-alt mr-2"></i>Logout
                         </button>
                     </div>
@@ -415,7 +414,11 @@
 
             const username = sessionStorage.getItem('admin_username');
             if (username) {
-                document.getElementById('adminWelcome').textContent = username;
+                // Update all admin welcome elements
+                const adminWelcomeElement = document.getElementById('adminWelcome');
+                if (adminWelcomeElement) {
+                    adminWelcomeElement.textContent = username;
+                }
             }
         }
 
@@ -428,17 +431,24 @@
 
         async function loadStats() {
             try {
+                console.log('Loading stats...');
                 const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.ADMIN}?action=stats`, {
                     credentials: 'include'
                 });
+                console.log('Stats response:', response);
                 const result = await response.json();
+                console.log('Stats result:', result);
 
                 if (result.success) {
                     const stats = result.stats;
+                    console.log('Stats data:', stats);
                     document.getElementById('totalRequests').textContent = stats.total_requests || 0;
                     document.getElementById('pendingRequests').textContent = stats.pending_requests || 0;
                     document.getElementById('criticalRequests').textContent = stats.critical_requests || 0;
                     document.getElementById('fulfilledRequests').textContent = stats.fulfilled_requests || 0;
+                    console.log('Stats updated successfully');
+                } else {
+                    console.error('Stats request failed:', result);
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
