@@ -1,17 +1,38 @@
 // University Demo Configuration - FIXED VERSION
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:8081',
+    API_BASE_URL: 'http://localhost:8080',
     ENDPOINTS: {
-        REGISTER: '/register.php',
-        LOGIN: '/login.php',
-        REQUEST: '/request.php',
-        SEARCH: '/search.php',
-        INVENTORY: '/inventory.php',
-        DONATIONS: '/donations.php',
-        ADMIN: '/admin.php'
+        REGISTER: '/backend/register.php',
+        LOGIN: '/backend/login.php',
+        LOGOUT: '/backend/logout.php',
+        SESSION_CHECK: '/backend/session_check.php',
+        PROFILE: '/backend/profile.php',
+        DONATIONS: '/backend/donations.php',
+        REQUESTS: '/backend/request.php',
+        SEARCH: '/backend/search.php',
+        INVENTORY: '/backend/inventory.php',
+        MONITOR: '/backend/monitor.php',
+        ADMIN: '/backend/admin.php'
     },
-    BLOOD_GROUPS: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-    URGENCY_LEVELS: ['Low', 'Medium', 'High', 'Critical'],
+    VALIDATION: {
+        MIN_PASSWORD_LENGTH: 8,
+        EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        PHONE_REGEX: /^[\+]?[1-9][\d]{0,15}$/
+    },
+    BLOOD_COMPATIBILITY: {
+        'A+': ['A+', 'A-', 'O+', 'O-'],
+        'A-': ['A-', 'O-'],
+        'B+': ['B+', 'B-', 'O+', 'O-'],
+        'B-': ['B-', 'O-'],
+        'AB+': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+        'AB-': ['A-', 'B-', 'AB-', 'O-'],
+        'O+': ['O+', 'O-'],
+        'O-': ['O-']
+    },
+    NOTIFICATIONS: {
+        DURATION: 5000,
+        MAX_VISIBLE: 3
+    },
     APP_NAME: 'Blood Donation System (University Demo)',
     VERSION: '1.0.0-university-fixed'
 };

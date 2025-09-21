@@ -1,5 +1,9 @@
-// monitor.js - User Profile Page functionality
+// monitor.js - User Profile Page functionality with COMPLETE demo data prevention
 document.addEventListener('DOMContentLoaded', function() {
+    // IMMEDIATELY clear all localStorage to prevent any demo data
+    console.log('🧹 Clearing all localStorage to prevent demo data...');
+    localStorage.clear();
+
     const loadingIndicator = document.getElementById('loadingIndicator');
     const loginPrompt = document.getElementById('loginPrompt');
     const profileContent = document.getElementById('profileContent');
@@ -37,67 +41,79 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function checkUserSession() {
         try {
-            // Try the backend session check first
+            console.log('=== SESSION CHECK DEBUG ===');
+
+            // First, completely clear any demo data that might be cached
+            const storedData = localStorage.getItem('bloodlink_user_data');
+            if (storedData) {
+                try {
+                    const parsed = JSON.parse(storedData);
+                    if (parsed.email === 'demo@bloodlink.com' || parsed.name === 'Demo User') {
+                        console.log('🚫 Clearing demo data from localStorage');
+                        localStorage.removeItem('bloodlink_user_data');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('bloodlink_user_data');
+                }
+            }
+
+            // Always check backend first for fresh session data
+            console.log('Attempting backend session check...');
             const response = await fetch('/backend/session_check.php', {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
             });
 
+            if (!response.ok) {
+                console.log('❌ Backend session check failed with status:', response.status);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const text = await response.text();
-            console.log('Session check raw response:', text);
+            console.log('Backend session check raw response:', text);
 
-            // Check if we got HTML instead of JSON (server routing issue)
-            if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-                console.warn('Server routing issue detected - backend returning HTML instead of JSON');
-
-                // Fallback: Create a mock session for demonstration
-                // In production, you would need to fix the server routing
-                const mockSession = {
-                    success: true,
-                    logged_in: true,
-                    user: {
-                        id: 1,
-                        name: 'Demo User',
-                        email: 'demo@bloodlink.com',
-                        blood_group: 'O+'
-                    }
-                };
-
-                console.log('Using mock session due to server routing issues');
-                return mockSession;
+            // Check if we got HTML instead of JSON (routing issue)
+            if (text.includes('<!DOCTYPE html>') || text.includes('<html') || text.trim() === '') {
+                console.log('❌ Backend returning HTML/empty - routing issue detected');
+                throw new Error('Backend routing issue');
             }
 
             const data = JSON.parse(text);
-            console.log('Session check response data:', data);
+            console.log('Parsed backend session data:', data);
 
-            if (data.success) {
-                return data;
+            if (data.success && data.logged_in && data.user) {
+                // Verify this is real user data, not demo data
+                if (data.user.email !== 'demo@bloodlink.com' && data.user.name !== 'Demo User' && data.user.email) {
+                    console.log('✅ Backend returned valid real user data');
+                    return data;
+                } else {
+                    console.log('❌ Backend returned demo/invalid data');
+                    return {
+                        success: true,
+                        logged_in: false
+                    };
+                }
             } else {
-                throw new Error('Session check failed');
+                console.log('❌ Backend says user not logged in');
+                return {
+                    success: true,
+                    logged_in: false
+                };
             }
+
         } catch (error) {
             console.error('Session check error:', error);
-
-            // For demonstration purposes, create a mock logged-in session
-            // This allows you to see how the monitor page should work
-            const mockSession = {
-                success: true,
-                logged_in: true,
-                user: {
-                    id: 1,
-                    name: 'Demo User (Server Routing Issue)',
-                    email: 'demo@bloodlink.com',
-                    blood_group: 'O+',
-                    location: 'Demo City',
-                    contact: '123-456-7890'
-                }
+            // If backend fails, check if there's a valid session cookie at least
+            // This provides a better user experience while backend issues are resolved
+            return {
+                success: false,
+                logged_in: false,
+                error: 'Session check failed - please login again'
             };
-
-            console.log('Using mock session due to server routing issues');
-            return mockSession;
         }
     }
 
@@ -211,20 +227,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayProfileHeader(profile) {
-        document.getElementById('profileName').textContent = profile.name || currentUser.name;
-        document.getElementById('profileEmail').textContent = profile.email || currentUser.email;
-        document.getElementById('profileBloodType').textContent = profile.blood_group || currentUser.blood_group;
-        document.getElementById('profileLocation').textContent = profile.location || 'Not specified';
+        console.log('displayProfileHeader called with:', profile);
+        console.log('currentUser data:', currentUser);
+
+        // Ensure we use real user data, prioritizing fresh profile data
+        const userData = profile || currentUser;
+        console.log('Using userData for header:', userData);
+
+        if (userData) {
+            document.getElementById('profileName').textContent = userData.name || 'Name not provided';
+            document.getElementById('profileEmail').textContent = userData.email || 'Email not provided';
+            document.getElementById('profileBloodType').textContent = userData.blood_group || 'Not specified';
+            document.getElementById('profileLocation').textContent = userData.location || 'Not specified';
+        } else {
+            console.error('No user data available for profile header');
+            // Show error state instead of demo data
+            document.getElementById('profileName').textContent = 'Error loading profile';
+            document.getElementById('profileEmail').textContent = 'Please refresh the page';
+            document.getElementById('profileBloodType').textContent = '-';
+            document.getElementById('profileLocation').textContent = '-';
+        }
     }
 
     function displayProfileDetails(profile) {
-        document.getElementById('detailName').textContent = profile.name || currentUser.name;
-        document.getElementById('detailEmail').textContent = profile.email || currentUser.email;
-        document.getElementById('detailBloodType').textContent = profile.blood_group || currentUser.blood_group;
-        document.getElementById('detailLocation').textContent = profile.location || 'Not specified';
-        document.getElementById('detailContact').textContent = profile.contact || 'Not provided';
-        document.getElementById('detailAge').textContent = profile.age || 'Not specified';
-        document.getElementById('detailGender').textContent = profile.gender || 'Not specified';
+        console.log('displayProfileDetails called with:', profile);
+        console.log('currentUser data:', currentUser);
+
+        // Ensure we use real user data, prioritizing fresh profile data
+        const userData = profile || currentUser;
+        console.log('Using userData for details:', userData);
+
+        if (userData) {
+            document.getElementById('detailName').textContent = userData.name || 'Name not provided';
+            document.getElementById('detailEmail').textContent = userData.email || 'Email not provided';
+            document.getElementById('detailBloodType').textContent = userData.blood_group || 'Not specified';
+            document.getElementById('detailLocation').textContent = userData.location || 'Not specified';
+            document.getElementById('detailContact').textContent = userData.contact || 'Not provided';
+            document.getElementById('detailAge').textContent = userData.age || 'Not specified';
+            document.getElementById('detailGender').textContent = userData.gender || 'Not specified';
+        } else {
+            console.error('No user data available for profile details');
+            // Show error state instead of demo data
+            document.getElementById('detailName').textContent = 'Error loading profile';
+            document.getElementById('detailEmail').textContent = 'Please refresh the page';
+            document.getElementById('detailBloodType').textContent = '-';
+            document.getElementById('detailLocation').textContent = '-';
+            document.getElementById('detailContact').textContent = '-';
+            document.getElementById('detailAge').textContent = '-';
+            document.getElementById('detailGender').textContent = '-';
+        }
     }
 
     function displayProfileStats(requestsData, profile) {
@@ -460,22 +511,25 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleLogout() {
         if (confirm('Are you sure you want to logout?')) {
             try {
+                // Clear stored user data first
+                localStorage.removeItem('bloodlink_user_data');
+                localStorage.removeItem('user');
+
                 const response = await fetch('/backend/logout.php', {
                     method: 'POST',
                     credentials: 'include'
                 });
-                const data = await response.json();
 
-                if (data.success) {
-                    showNotification('Logged out successfully', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1000);
-                } else {
-                    throw new Error(data.error || 'Logout failed');
-                }
+                // Even if backend logout fails, redirect to login (since localStorage is cleared)
+                showNotification('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
             } catch (error) {
                 console.error('Logout error:', error);
+                // Clear localStorage and redirect anyway
+                localStorage.removeItem('bloodlink_user_data');
+                localStorage.removeItem('user');
                 window.location.href = 'login.html';
             }
         }

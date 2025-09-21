@@ -5,6 +5,8 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_secure', 0); // Set to 1 if using HTTPS
 ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.gc_maxlifetime', 3600); // 1 hour session lifetime
+ini_set('session.cookie_lifetime', 3600);
 
 session_start();
 include 'db.php';
@@ -49,16 +51,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Verify password using the function from db.php
             if (verifyPassword($password, $user['password'])) {
-                // Clear any existing session data
+                // Clear any existing session data and regenerate session ID
                 session_regenerate_id(true);
 
-                // Set session variables
-                $_SESSION['user_id'] = $user['id'];
+                // Set session variables with complete user data
+                $_SESSION['user_id'] = (int)$user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['blood_group'] = $user['blood_group'];
+                $_SESSION['location'] = $user['location'];
+                $_SESSION['contact'] = $user['contact'];
                 $_SESSION['logged_in'] = true;
                 $_SESSION['login_time'] = time();
+
+                // Force session write
+                session_write_close();
+                session_start();
 
                 // Debug: Log session data
                 error_log("Login successful - Session ID: " . session_id());
@@ -68,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     'success' => true,
                     'message' => 'Login successful! Welcome back to BloodLink.',
                     'user' => [
-                        'id' => $user['id'],
+                        'id' => (int)$user['id'],
                         'name' => $user['name'],
                         'email' => $user['email'],
                         'blood_group' => $user['blood_group'],
@@ -102,10 +110,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     http_response_code(405);
     echo json_encode([
         'success' => false,
-        'message' => 'Method not allowed. Please use POST method.',
-        'error_code' => 'METHOD_NOT_ALLOWED'
+        'message' => 'Method not allowed'
     ]);
 }
-
-$conn->close();
 ?>

@@ -1,5 +1,5 @@
 <?php
-// monitor.php - Return real user data for logged sessions
+// profile.php - Return real user profile data from session
 session_start();
 
 header('Content-Type: application/json');
@@ -8,7 +8,6 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 header('Access-Control-Allow-Credentials: true');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
@@ -24,20 +23,22 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || !isset($_SESSIO
 
 $action = $_GET['action'] ?? '';
 
-if ($action === 'user_data') {
-    // Return user's blood requests data
+if ($action === 'get_profile') {
+    // Return real user profile data from session
     echo json_encode([
         'success' => true,
-        'requests' => [], // Empty for now since we're focusing on session data
-        'matching_donors' => [],
-        'inventory' => []
-    ]);
-} elseif ($action === 'available_donors') {
-    // Return available donors for the user's blood type
-    echo json_encode([
-        'success' => true,
-        'donors' => [], // Empty for now
-        'compatible_types' => []
+        'profile' => [
+            'id' => $_SESSION['user_id'],
+            'name' => $_SESSION['user_name'],
+            'email' => $_SESSION['user_email'],
+            'blood_group' => $_SESSION['blood_group'],
+            'location' => $_SESSION['location'] ?? 'Not specified',
+            'contact' => $_SESSION['contact'] ?? 'Not provided',
+            'age' => $_SESSION['age'] ?? 'Not specified',
+            'gender' => $_SESSION['gender'] ?? 'Not specified',
+            'created_at' => date('Y-m-d'),
+            'last_donation_date' => null
+        ]
     ]);
 } else {
     echo json_encode([

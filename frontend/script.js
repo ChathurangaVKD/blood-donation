@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize form validation and notifications
     initializeFormValidation();
 
+    // Check session status and update UI
+    checkSessionAndUpdateUI();
+
     // Handle registration form
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
@@ -66,14 +69,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.success) {
                     notifications.showToast('success', 'Login Successful', 'Welcome back! Redirecting to dashboard...');
 
-                    // Store user session data
+                    // Store real user session data with correct key
                     if (result.user) {
-                        localStorage.setItem('user', JSON.stringify(result.user));
+                        localStorage.setItem('bloodlink_user_data', JSON.stringify(result.user));
+                        console.log('Stored real user data:', result.user);
                     }
 
-                    // Redirect to dashboard
+                    // Redirect to monitor page instead of index
                     setTimeout(() => {
-                        window.location.href = 'index.html';
+                        window.location.href = 'monitor.html';
                     }, 1500);
                 } else {
                     notifications.showToast('error', 'Login Failed', result.message || 'Invalid credentials. Please try again.');
@@ -498,4 +502,274 @@ function initializePage() {
             card.style.transform = 'scale(1)';
         });
     });
+}
+
+// Session management functions
+async function checkSessionAndUpdateUI() {
+    try {
+        console.log('Checking session status...');
+        const response = await fetch('/backend/session_check.php', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const result = await response.json();
+        console.log('Session check result:', result);
+
+        if (result.success && result.logged_in && result.user) {
+            updateUIForLoggedInUser(result.user);
+        } else {
+            updateUIForLoggedOutUser();
+        }
+    } catch (error) {
+        console.error('Session check failed:', error);
+        updateUIForLoggedOutUser();
+    }
+}
+
+function updateUIForLoggedInUser(user) {
+    console.log('Updating UI for logged in user:', user);
+
+    // Update navigation
+    updateNavigation(user);
+
+    // Show user profile section on homepage
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+        showUserDashboard(user);
+    }
+
+    // Update page content based on user status
+    updatePageContent(user);
+}
+
+function updateUIForLoggedOutUser() {
+    console.log('Updating UI for logged out user');
+
+    // Show default navigation
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+        userInfo.innerHTML = `
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-sign-in-alt mr-1"></i>Login
+                </a>
+                <a href="register.html" class="bg-white text-blood-600 hover:bg-red-50 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <i class="fas fa-user-plus mr-1"></i>Register
+                </a>
+            </div>
+        `;
+    }
+
+    // Hide user dashboard if present
+    const userDashboard = document.getElementById('userDashboard');
+    if (userDashboard) {
+        userDashboard.style.display = 'none';
+    }
+}
+
+function updateNavigation(user) {
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) {
+        userInfo.innerHTML = `
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 text-white">
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                    <div class="text-sm">
+                        <div class="font-medium">Welcome, ${user.name}</div>
+                        <div class="text-red-200 text-xs">${user.blood_group} • ${user.location}</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="monitor.html" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                    </a>
+                    <button onclick="logout()" class="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function showUserDashboard(user) {
+    // Find the hero section to insert user dashboard after it
+    const heroSection = document.querySelector('section.relative.bg-gradient-to-br');
+    if (!heroSection) return;
+
+    // Remove existing user dashboard if present
+    const existingDashboard = document.getElementById('userDashboard');
+    if (existingDashboard) {
+        existingDashboard.remove();
+    }
+
+    // Create user dashboard section
+    const userDashboard = document.createElement('section');
+    userDashboard.id = 'userDashboard';
+    userDashboard.className = 'py-16 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200';
+
+    userDashboard.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Welcome back, ${user.name}!</h2>
+                <p class="text-lg text-gray-600">Here's your profile and recent activity</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- User Profile Card -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-20 h-20 bg-gradient-to-br from-blood-500 to-blood-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-user text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">${user.name}</h3>
+                            <p class="text-gray-600">${user.email}</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                                <span class="text-gray-600">Blood Group</span>
+                                <span class="font-semibold text-blood-600 text-lg">${user.blood_group}</span>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                                <span class="text-gray-600">Location</span>
+                                <span class="font-medium text-gray-900">${user.location}</span>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                                <span class="text-gray-600">Contact</span>
+                                <span class="font-medium text-gray-900">${user.contact}</span>
+                            </div>
+                            <div class="flex items-center justify-between py-3">
+                                <span class="text-gray-600">User ID</span>
+                                <span class="font-mono text-sm text-gray-500">#${user.id}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-100">
+                            <a href="monitor.html" class="w-full bg-gradient-to-r from-blood-600 to-blood-700 text-white font-medium py-3 px-4 rounded-lg hover:from-blood-700 hover:to-blood-800 transition-all duration-200 flex items-center justify-center">
+                                <i class="fas fa-tachometer-alt mr-2"></i>
+                                View Full Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="lg:col-span-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-heart text-white"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">Donate Blood</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Ready to save lives? Schedule your next donation.</p>
+                            <a href="request.html" class="text-green-600 hover:text-green-700 font-medium">
+                                Schedule Donation <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-search text-white"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">Find Donors</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Search for blood donors in your area.</p>
+                            <a href="search.html" class="text-blue-600 hover:text-blue-700 font-medium">
+                                Search Now <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-hand-holding-medical text-white"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">Request Blood</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Need blood urgently? Submit a request.</p>
+                            <a href="request.html" class="text-purple-600 hover:text-purple-700 font-medium">
+                                Make Request <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
+                            <div class="flex items-center mb-4">
+                                <div class="w-12 h-12 bg-gradient-to-br from-blood-500 to-blood-600 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-chart-line text-white"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">Monitor Activity</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">Track donations and requests in real-time.</p>
+                            <a href="monitor.html" class="text-blood-600 hover:text-blood-700 font-medium">
+                                View Monitor <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Insert after hero section
+    heroSection.parentNode.insertBefore(userDashboard, heroSection.nextSibling);
+}
+
+function updatePageContent(user) {
+    // Update any user-specific content on other pages
+    const welcomeMessages = document.querySelectorAll('.user-welcome');
+    welcomeMessages.forEach(element => {
+        element.textContent = `Welcome, ${user.name}!`;
+    });
+
+    // Update blood group displays
+    const bloodGroupDisplays = document.querySelectorAll('.user-blood-group');
+    bloodGroupDisplays.forEach(element => {
+        element.textContent = user.blood_group;
+    });
+}
+
+async function logout() {
+    try {
+        notifications.showToast('info', 'Logging out', 'Ending your session...');
+
+        const response = await fetch('/backend/logout.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            notifications.showToast('success', 'Logged out', 'You have been logged out successfully');
+
+            // Clear any stored user data
+            localStorage.removeItem('bloodlink_user_data');
+
+            // Update UI
+            updateUIForLoggedOutUser();
+
+            // Redirect to home page after delay
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        } else {
+            notifications.showToast('error', 'Logout failed', 'Failed to logout properly');
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+        notifications.showToast('error', 'Network error', 'Unable to logout due to network issues');
+    }
 }

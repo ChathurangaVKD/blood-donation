@@ -331,7 +331,7 @@ class DatabaseReset {
         echo "   Admin Username: admin\n";
         echo "   Admin Password: admin123\n";
         echo "   Frontend: search.html\n";
-        echo "   Backend: http://localhost:8081\n";
+        echo "   Backend: http://localhost:8080/backend/\n";
     }
 }
 

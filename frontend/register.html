@@ -359,12 +359,15 @@
                     try {
                         console.log('📡 Making registration API call...');
 
-                        const response = await fetch(CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.REGISTER, {
+                        // Use direct URL to ensure correct port - FIXED
+                        const response = await fetch('/backend/register.php', {
                             method: 'POST',
+                            credentials: 'include',
                             body: formData
                         });
 
                         console.log('📥 Response received:', response.status, response.statusText);
+                        console.log('📍 Request was sent to:', response.url);
 
                         if (!response.ok) {
                             throw new Error(`Server error: ${response.status} ${response.statusText}`);

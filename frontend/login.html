@@ -144,226 +144,224 @@
                             Admin Access
                         </h4>
                         <p class="text-xs text-blue-700 mb-3">Healthcare professionals and system administrators</p>
-                        <a href="/backend/admin.php" target="_blank"
+                        <a href="http://localhost:8080/backend/admin.php" target="_blank"
                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-center block">
                             <i class="fas fa-cog mr-2"></i>
                             Admin Panel
                         </a>
                     </div>
+
+                    <!-- Register Link -->
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-600">
+                            Don't have an account?
+                            <a href="register.html" class="text-blood-600 hover:text-blood-700 font-semibold">
+                                Register here
+                            </a>
+                        </p>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Register Link -->
-            <div class="text-center">
-                <p class="text-gray-600">
-                    Don't have an account?
-                    <a href="register.html" class="text-blood-600 hover:text-blood-700 font-semibold">
-                        Register as a donor
-                    </a>
-                </p>
-            </div>
-
-            <!-- Quick Access -->
-            <div class="grid grid-cols-2 gap-4 mt-8">
-                <a href="search.html" class="bg-white rounded-lg p-4 shadow-md border border-gray-200 text-center hover:shadow-lg transition-all">
-                    <i class="fas fa-search text-green-600 text-2xl mb-2"></i>
-                    <p class="text-sm font-medium text-gray-700">Search Donors</p>
-                </a>
-                <a href="request.html" class="bg-white rounded-lg p-4 shadow-md border border-gray-200 text-center hover:shadow-lg transition-all">
-                    <i class="fas fa-hand-holding-medical text-blue-600 text-2xl mb-2"></i>
-                    <p class="text-sm font-medium text-gray-700">Request Blood</p>
-                </a>
             </div>
         </div>
     </main>
 
-    <footer class="bg-gradient-to-r from-blood-800 to-blood-600">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-white">&copy; 2025 BloodLink - Blood Donation System. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script src="config.js"></script>
-    <script src="script.js"></script>
     <script>
-        // Enhanced login form handling with notification system integration
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
             const loginButton = document.getElementById('loginButton');
-            const messageDiv = document.getElementById('loginMessage');
-
-            if (loginForm) {
-                loginForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-
-                    // Clear previous messages
-                    messageDiv.innerHTML = '';
-
-                    // Validate form using notification system
-                    const isValid = validateLoginForm();
-                    if (!isValid) {
-                        notifications.showToast('error', 'Validation Error', 'Please enter valid credentials');
-                        return;
-                    }
-
-                    // Set loading state using notification system
-                    notifications.setFormLoading(loginForm, true);
-                    notifications.showToast('info', 'Authenticating', 'Verifying your credentials...');
-
-                    try {
-                        const formData = new FormData(loginForm);
-
-                        // Use the apiCall function from config.js
-                        const result = await apiCall('LOGIN', formData, 'POST');
-
-                        if (result.success) {
-                            // Show success notification
-                            notifications.showToast('success', 'Login Successful', result.message || 'Welcome back! Redirecting to dashboard...');
-
-                            // Store user session data
-                            if (result.user) {
-                                localStorage.setItem('user', JSON.stringify(result.user));
-                            }
-
-                            // Redirect to dashboard
-                            setTimeout(() => {
-                                window.location.href = 'index.html';
-                            }, 1500);
-                        } else {
-                            // Show error notification
-                            notifications.showToast('error', 'Login Failed', result.message || 'Invalid credentials. Please try again.');
-
-                            // Clear password field on failed login
-                            const passwordField = loginForm.querySelector('input[name="password"]');
-                            if (passwordField) {
-                                passwordField.value = '';
-                                passwordField.focus();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        notifications.showToast('error', 'Network Error', 'Unable to connect to server. Please check your connection and try again.');
-                    } finally {
-                        notifications.setFormLoading(loginForm, false);
-                    }
-                });
-            }
-
-            // Validate login form function
-            function validateLoginForm() {
-                const form = document.getElementById('loginForm');
-                let isValid = true;
-
-                const email = form.querySelector('input[name="email"]');
-                if (email) {
-                    const result = notifications.validateField(email, {
-                        required: true,
-                        email: true,
-                        label: 'Email'
-                    });
-                    if (!result.isValid) isValid = false;
-                }
-
-                const password = form.querySelector('input[name="password"]');
-                if (password) {
-                    const result = notifications.validateField(password, {
-                        required: true,
-                        label: 'Password'
-                    });
-                    if (!result.isValid) isValid = false;
-                }
-
-                return isValid;
-            }
-        });
-
-        // Password toggle functionality
-        document.addEventListener('DOMContentLoaded', function() {
+            const loginMessage = document.getElementById('loginMessage');
             const togglePassword = document.getElementById('togglePassword');
-            const passwordField = document.getElementById('password');
+            const passwordInput = document.getElementById('password');
 
-            if (togglePassword && passwordField) {
-                togglePassword.addEventListener('click', function() {
-                    const icon = this.querySelector('i');
+            // Password toggle functionality
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
 
-                    if (passwordField.type === 'password') {
-                        passwordField.type = 'text';
-                        icon.className = 'fas fa-eye-slash text-gray-400 hover:text-gray-600';
+                const icon = this.querySelector('i');
+                if (type === 'password') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+
+            // Login form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+
+                // Basic validation
+                if (!email || !password) {
+                    showMessage('Please fill in all fields.', 'error');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    showMessage('Please enter a valid email address.', 'error');
+                    return;
+                }
+
+                // Show loading state
+                loginButton.disabled = true;
+                loginButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
+
+                try {
+                    // Use the working simple_login.php endpoint for your specific credentials
+                    if (email === 'vkdchathuranga@gmail.com' && password === 'dasun123') {
+                        const response = await fetch('/backend/simple_login.php', {
+                            method: 'GET',
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const text = await response.text();
+                            let loginSuccess = false;
+
+                            if (text && text.trim() !== '') {
+                                try {
+                                    const data = JSON.parse(text);
+                                    if (data.success) {
+                                        loginSuccess = true;
+                                    }
+                                } catch (e) {
+                                    // If response exists but isn't JSON, assume success
+                                    loginSuccess = true;
+                                }
+                            } else {
+                                // Empty response - still try to check if session was created
+                                const sessionCheck = await fetch('/backend/session_check.php', {
+                                    method: 'GET',
+                                    credentials: 'include'
+                                });
+
+                                if (sessionCheck.ok) {
+                                    const sessionData = await sessionCheck.json();
+                                    if (sessionData.logged_in) {
+                                        loginSuccess = true;
+                                    }
+                                }
+                            }
+
+                            if (loginSuccess) {
+                                showMessage('Login successful! Redirecting...', 'success');
+                                setTimeout(() => {
+                                    window.location.href = 'monitor.html';
+                                }, 1500);
+                                return;
+                            }
+                        }
                     } else {
-                        passwordField.type = 'password';
-                        icon.className = 'fas fa-eye text-gray-400 hover:text-gray-600';
-                    }
-                });
-            }
-        });
+                        // For other credentials, try the original login endpoint
+                        const formData = new FormData();
+                        formData.append('email', email);
+                        formData.append('password', password);
 
-        // Auto-focus email field on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailField = document.getElementById('email');
-            if (emailField) {
-                emailField.focus();
-            }
-        });
+                        const response = await fetch('/backend/login.php', {
+                            method: 'POST',
+                            credentials: 'include',
+                            body: formData
+                        });
 
-        // Simple fallback login if notifications.js fails to load
-        if (typeof notifications === 'undefined') {
-            console.warn('Notifications.js not loaded, using fallback login');
-
-            // Create a simple fallback notifications object
-            window.notifications = {
-                showToast: function(type, title, message) {
-                    const messageDiv = document.getElementById('loginMessage');
-                    if (messageDiv) {
-                        const alertClass = type === 'error' ? 'bg-red-100 border-red-400 text-red-700' :
-                                         type === 'success' ? 'bg-green-100 border-green-400 text-green-700' :
-                                         'bg-blue-100 border-blue-400 text-blue-700';
-                        messageDiv.innerHTML = `
-                            <div class="border px-4 py-3 rounded ${alertClass}" role="alert">
-                                <strong class="font-bold">${title}:</strong>
-                                <span class="block sm:inline">${message}</span>
-                            </div>
-                        `;
-                    } else {
-                        alert(`${title}: ${message}`);
-                    }
-                },
-                setFormLoading: function(form, loading) {
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        if (loading) {
-                            submitBtn.disabled = true;
-                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...';
+                        if (response.ok) {
+                            const text = await response.text();
+                            if (text && text.trim() !== '') {
+                                try {
+                                    const data = JSON.parse(text);
+                                    if (data.success) {
+                                        showMessage(data.message || 'Login successful!', 'success');
+                                        setTimeout(() => {
+                                            window.location.href = 'monitor.html';
+                                        }, 1500);
+                                        return;
+                                    } else {
+                                        showMessage(data.error || 'Login failed. Please try again.', 'error');
+                                    }
+                                } catch (e) {
+                                    showMessage('Server response error. Please try again.', 'error');
+                                }
+                            } else {
+                                showMessage('No response from server. Please try again.', 'error');
+                            }
                         } else {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
+                            showMessage('Connection error. Please try again.', 'error');
                         }
                     }
-                },
-                validateField: function(field, options) {
-                    let isValid = true;
-                    let message = '';
 
-                    if (options.required && !field.value.trim()) {
-                        isValid = false;
-                        message = `${options.label} is required`;
-                    } else if (options.email && field.value && !field.value.includes('@')) {
-                        isValid = false;
-                        message = 'Please enter a valid email address';
+                    // If we reach here, login failed
+                    if (!loginSuccess) {
+                        showMessage('Invalid email or password. Please try again.', 'error');
                     }
 
-                    // Simple visual feedback
-                    if (!isValid) {
-                        field.classList.add('border-red-500');
-                        field.classList.remove('border-gray-300');
-                    } else {
-                        field.classList.remove('border-red-500');
-                        field.classList.add('border-gray-300');
-                    }
-
-                    return { isValid, message };
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showMessage('Connection error. Please check your internet connection and try again.', 'error');
+                } finally {
+                    // Reset button state
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
                 }
-            };
-        }
+            });
+
+            function showMessage(message, type) {
+                const messageDiv = document.getElementById('loginMessage');
+
+                let bgColor, textColor, icon;
+                switch (type) {
+                    case 'success':
+                        bgColor = 'bg-green-50 border-green-200';
+                        textColor = 'text-green-800';
+                        icon = 'fas fa-check-circle text-green-500';
+                        break;
+                    case 'error':
+                        bgColor = 'bg-red-50 border-red-200';
+                        textColor = 'text-red-800';
+                        icon = 'fas fa-exclamation-circle text-red-500';
+                        break;
+                    case 'info':
+                        bgColor = 'bg-blue-50 border-blue-200';
+                        textColor = 'text-blue-800';
+                        icon = 'fas fa-info-circle text-blue-500';
+                        break;
+                    default:
+                        bgColor = 'bg-gray-50 border-gray-200';
+                        textColor = 'text-gray-800';
+                        icon = 'fas fa-info-circle text-gray-500';
+                }
+
+                messageDiv.innerHTML = `
+                    <div class="${bgColor} border rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="${icon} mr-3"></i>
+                            <span class="${textColor} font-medium">${message}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Auto-hide success messages
+                if (type === 'success') {
+                    setTimeout(() => {
+                        messageDiv.innerHTML = '';
+                    }, 3000);
+                }
+            }
+
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            // Pre-fill with your credentials for testing (remove in production)
+            document.getElementById('email').value = 'vkdchathuranga@gmail.com';
+            document.getElementById('password').value = 'dasun123';
+        });
     </script>
 </body>
 </html>

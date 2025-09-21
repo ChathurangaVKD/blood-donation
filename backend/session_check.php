@@ -1,5 +1,5 @@
 <?php
-// session_check.php - Check user login status with enhanced session handling
+// session_check.php - Extract real user data from logged sessions
 // Configure session settings
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
@@ -21,44 +21,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Debug session information
-error_log("BloodLink Session Check: Session ID: " . session_id());
-error_log("BloodLink Session Check: Session data: " . print_r($_SESSION, true));
-
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
-    if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] && isset($_SESSION['user_email'])) {
-        // User is logged in
-        echo json_encode([
-            'success' => true,
-            'logged_in' => true,
-            'user' => [
-                'id' => $_SESSION['user_id'] ?? 1,
-                'name' => $_SESSION['user_name'] ?? 'Unknown User',
-                'email' => $_SESSION['user_email'],
-                'blood_group' => $_SESSION['blood_group'] ?? 'Unknown'
-            ],
-            'session_id' => session_id()
-        ]);
-    } else {
-        // User is not logged in
-        echo json_encode([
-            'success' => true,
-            'logged_in' => false,
-            'session_id' => session_id(),
-            'debug' => [
-                'session_exists' => !empty($_SESSION),
-                'logged_in_set' => isset($_SESSION['logged_in']),
-                'logged_in_value' => $_SESSION['logged_in'] ?? null,
-                'user_email_set' => isset($_SESSION['user_email']),
-                'session_data' => $_SESSION
-            ]
-        ]);
-    }
-} else {
-    http_response_code(405);
+// Check session status and return user data
+if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_SESSION['user_email'])) {
+    // User is logged in, return session data
     echo json_encode([
-        'success' => false,
-        'message' => 'Method not allowed'
+        'success' => true,
+        'logged_in' => true,
+        'user' => [
+            'id' => $_SESSION['user_id'] ?? null,
+            'name' => $_SESSION['user_name'] ?? 'Name not available',
+            'email' => $_SESSION['user_email'] ?? 'Email not available',
+            'blood_group' => $_SESSION['blood_group'] ?? 'Not specified',
+            'location' => $_SESSION['location'] ?? 'Not specified',
+            'contact' => $_SESSION['contact'] ?? 'Not provided'
+        ],
+        'session_id' => session_id()
+    ]);
+} else {
+    // User is not logged in
+    echo json_encode([
+        'success' => true,
+        'logged_in' => false,
+        'user' => null,
+        'message' => 'No active session found'
     ]);
 }
 ?>

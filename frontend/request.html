@@ -699,127 +699,153 @@
         </div>
     </main>
 
-    <script src="config.js"></script>
+    <footer class="bg-gradient-to-r from-blood-800 to-blood-600 mt-16">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-white">&copy; 2025 BloodLink - Blood Donation System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="config.js?v=20250921"></script>
+    <script src="script.js"></script>
     <script>
-        // Tab switching functionality
-        document.getElementById('requestTab').addEventListener('click', function() {
-            document.getElementById('requestSection').classList.remove('hidden');
-            document.getElementById('donorSection').classList.add('hidden');
-            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
-            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
-            document.getElementById('donorTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
-            document.getElementById('donorTab').classList.add('text-gray-600', 'hover:bg-gray-50');
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching functionality
+            const requestTab = document.getElementById('requestTab');
+            const donorTab = document.getElementById('donorTab');
+            const requestSection = document.getElementById('requestSection');
+            const donorSection = document.getElementById('donorSection');
 
-        document.getElementById('donorTab').addEventListener('click', function() {
-            document.getElementById('donorSection').classList.remove('hidden');
-            document.getElementById('requestSection').classList.add('hidden');
-            this.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
-            this.classList.remove('text-gray-600', 'hover:bg-gray-50');
-            document.getElementById('requestTab').classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
-            document.getElementById('requestTab').classList.add('text-gray-600', 'hover:bg-gray-50');
-        });
+            requestTab.addEventListener('click', function() {
+                requestTab.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
+                requestTab.classList.remove('text-gray-600', 'hover:bg-gray-50');
+                donorTab.classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
+                donorTab.classList.add('text-gray-600', 'hover:bg-gray-50');
+                requestSection.classList.remove('hidden');
+                donorSection.classList.add('hidden');
+            });
 
-        // Blood request form submission
-        document.getElementById('requestForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+            donorTab.addEventListener('click', function() {
+                donorTab.classList.add('bg-blood-600', 'text-white', 'shadow-lg');
+                donorTab.classList.remove('text-gray-600', 'hover:bg-gray-50');
+                requestTab.classList.remove('bg-blood-600', 'text-white', 'shadow-lg');
+                requestTab.classList.add('text-gray-600', 'hover:bg-gray-50');
+                donorSection.classList.remove('hidden');
+                requestSection.classList.add('hidden');
+            });
 
-            const submitButton = document.getElementById('requestButton');
-            const messageDiv = document.getElementById('requestMessage');
+            // Set minimum date to today
+            const requiredDateInput = document.getElementById('required_date');
+            const today = new Date().toISOString().split('T')[0];
+            requiredDateInput.setAttribute('min', today);
 
-            // Show loading state
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xl"></i> Processing Request...';
+            // Request form submission
+            const requestForm = document.getElementById('requestForm');
+            if (requestForm) {
+                requestForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-            try {
-                // Get form data
-                const formData = new FormData(this);
+                    const formData = new FormData(requestForm);
+                    const requestButton = document.getElementById('requestButton');
+                    const requestMessage = document.getElementById('requestMessage');
 
-                // Validate required fields
-                const requiredFields = ['requester_name', 'requester_contact', 'requester_email', 'blood_group', 'units_needed', 'urgency', 'required_date', 'hospital', 'location'];
-                let missingFields = [];
+                    // Show loading state
+                    requestButton.disabled = true;
+                    requestButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting Request...';
 
-                requiredFields.forEach(field => {
-                    if (!formData.get(field)) {
-                        missingFields.push(field);
+                    try {
+                        const result = await apiCall('REQUESTS', formData, 'POST');
+
+                        if (result.success) {
+                            requestMessage.innerHTML = `
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                        <span class="text-green-800 font-medium">${result.message || 'Blood request submitted successfully!'}</span>
+                                    </div>
+                                </div>
+                            `;
+                            requestForm.reset();
+                        } else {
+                            requestMessage.innerHTML = `
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                        <span class="text-red-800 font-medium">${result.message || 'Failed to submit request. Please try again.'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Request submission error:', error);
+                        requestMessage.innerHTML = `
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                    <span class="text-red-800 font-medium">Connection error. Please try again.</span>
+                                </div>
+                            </div>
+                        `;
+                    } finally {
+                        requestButton.disabled = false;
+                        requestButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Blood Request<i class="fas fa-arrow-right ml-2"></i>';
                     }
                 });
+            }
 
-                if (missingFields.length > 0) {
-                    throw new Error('Please fill in all required fields');
-                }
+            // Donor form submission
+            const donorForm = document.getElementById('donorForm');
+            if (donorForm) {
+                donorForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-                // Check confirmation checkbox
-                if (!formData.get('confirm')) {
-                    throw new Error('Please confirm the medical professional requirements');
-                }
+                    const formData = new FormData(donorForm);
+                    const donorButton = document.getElementById('donorButton');
+                    const donorMessage = document.getElementById('donorMessage');
 
-                // Send request to backend
-                const response = await fetch(`${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.REQUEST}`, {
-                    method: 'POST',
-                    body: formData
+                    // Show loading state
+                    donorButton.disabled = true;
+                    donorButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Registering...';
+
+                    try {
+                        const result = await apiCall('REGISTER', formData, 'POST');
+
+                        if (result.success) {
+                            donorMessage.innerHTML = `
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                        <span class="text-green-800 font-medium">${result.message || 'Donor registration successful!'}</span>
+                                    </div>
+                                </div>
+                            `;
+                            donorForm.reset();
+                        } else {
+                            donorMessage.innerHTML = `
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                        <span class="text-red-800 font-medium">${result.message || 'Registration failed. Please try again.'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Donor registration error:', error);
+                        donorMessage.innerHTML = `
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                    <span class="text-red-800 font-medium">Connection error. Please try again.</span>
+                                </div>
+                            </div>
+                        `;
+                    } finally {
+                        donorButton.disabled = false;
+                        donorButton.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Register as Donor<i class="fas fa-heart ml-2"></i>';
+                    }
                 });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    // Show success message
-                    messageDiv.innerHTML = `
-                        <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-                            <div class="flex items-center gap-3">
-                                <div class="bg-green-500 w-8 h-8 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-check text-white"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-green-800 font-bold text-lg">Request Submitted Successfully!</h3>
-                                    <p class="text-green-600">Your blood request has been received. Request ID: ${result.request_id || 'N/A'}</p>
-                                    <p class="text-green-600 text-sm mt-1">You will be contacted shortly by our medical team.</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Reset form
-                    this.reset();
-
-                    // Scroll to message
-                    messageDiv.scrollIntoView({ behavior: 'smooth' });
-
-                } else {
-                    throw new Error(result.message || 'Failed to submit request');
-                }
-
-            } catch (error) {
-                // Show error message
-                messageDiv.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-red-500 w-8 h-8 rounded-full flex items-center justify-center">
-                                <i class="fas fa-exclamation-triangle text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-red-800 font-bold text-lg">Error Submitting Request</h3>
-                                <p class="text-red-600">${error.message}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Scroll to message
-                messageDiv.scrollIntoView({ behavior: 'smooth' });
-            } finally {
-                // Reset button state
-                submitButton.disabled = false;
-                submitButton.innerHTML = `
-                    <i class="fas fa-paper-plane text-xl"></i>
-                    Submit Blood Request
-                    <i class="fas fa-arrow-right text-lg"></i>
-                `;
             }
         });
-
-        // Set minimum date to today
-        document.getElementById('required_date').min = new Date().toISOString().split('T')[0];
     </script>
 </body>
 </html>

@@ -158,7 +158,7 @@
         </div>
     </footer>
 
-    <script src="config.js"></script>
+    <script src="config.js?v=20250921"></script>
     <script src="script.js"></script>
     <script>
         // University Demo - Fixed Search functionality
@@ -166,6 +166,12 @@
             const searchForm = document.getElementById('searchForm');
             const searchResults = document.getElementById('searchResults');
             const loadingSpinner = document.getElementById('loadingSpinner');
+
+            // ADDED: Test URL generation on page load
+            console.log('🎓 University Demo: Testing URL generation...');
+            console.log('CONFIG.API_BASE_URL:', CONFIG.API_BASE_URL);
+            console.log('CONFIG.ENDPOINTS.SEARCH:', CONFIG.ENDPOINTS.SEARCH);
+            console.log('Expected URL:', CONFIG.API_BASE_URL + CONFIG.ENDPOINTS.SEARCH);
 
             // REMOVED: Auto-load on page load - let user trigger search manually
             console.log('🎓 University Demo: Page loaded, waiting for user input...');
@@ -498,7 +504,7 @@
                                 <h4 class="font-semibold text-red-800 mb-2">Debug Information:</h4>
                                 <ul class="text-sm text-red-700 space-y-1">
                                     <li>• Frontend: http://localhost:8080</li>
-                                    <li>• Backend API: http://localhost:8081</li>
+                                    <li>• Backend API: http://localhost:8080/backend/</li>
                                     <li>• Database: localhost:3306/blood_donation</li>
                                     <li>• Expected: 3 donors in database</li>
                                 </ul>

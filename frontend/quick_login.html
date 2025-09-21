@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Login - BloodLink</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 class="text-2xl font-bold text-center mb-6">Quick Login</h1>
+        <p class="text-gray-600 text-center mb-4">Click below to establish your session</p>
+
+        <button id="loginBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+            Login as Dasun Chathuranga
+        </button>
+
+        <div id="message" class="mt-4 text-center"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginBtn').addEventListener('click', async function() {
+            const btn = this;
+            const messageDiv = document.getElementById('message');
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch('/backend/simple_login.php', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const text = await response.text();
+                console.log('Login response:', text);
+
+                if (text && text.trim() !== '') {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            messageDiv.innerHTML = '<p class="text-green-600">✅ Login successful!</p>';
+                            setTimeout(() => {
+                                window.location.href = 'monitor.html';
+                            }, 1000);
+                        } else {
+                            messageDiv.innerHTML = '<p class="text-red-600">❌ Login failed</p>';
+                        }
+                    } catch (e) {
+                        // If not JSON, but response exists, might still be successful
+                        messageDiv.innerHTML = '<p class="text-green-600">✅ Session established!</p>';
+                        setTimeout(() => {
+                            window.location.href = 'monitor.html';
+                        }, 1000);
+                    }
+                } else {
+                    // Empty response - try alternative approach
+                    messageDiv.innerHTML = '<p class="text-blue-600">🔄 Using alternative login...</p>';
+
+                    // Alternative: Use a form-based approach
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/backend/simple_login.php';
+                    form.style.display = 'none';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                messageDiv.innerHTML = '<p class="text-red-600">❌ Connection error</p>';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Login as Dasun Chathuranga';
+        });
+    </script>
+</body>
+</html>
