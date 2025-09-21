@@ -66,21 +66,60 @@ A comprehensive blood donation management system built with PHP, MySQL, and mode
    ```bash
    cd database
    php reset_and_populate.php
-   ```
-
-5. **Start the Development Server**
-   ```bash
-   # Navigate to project root
    cd ..
-   
-   # Start PHP built-in server
-   php -S localhost:8080 -t .
    ```
 
-6. **Access the Application**
-   - **Frontend**: http://localhost:8080/frontend/index.html
-   - **Admin Panel**: http://localhost:8080/frontend/admin.html
-   - **Search Page**: http://localhost:8080/frontend/search.html
+## 🎬 Starting the Application
+
+### Option 1: Easy Start (Recommended)
+Use the provided startup script for automatic setup and server launch:
+
+```bash
+# Make the script executable (one-time setup)
+chmod +x start.sh
+
+# Start the application
+./start.sh
+```
+
+The startup script will:
+- ✅ Check PHP installation and version
+- ✅ Verify MySQL availability
+- 🚀 Start the development server on `localhost:8080`
+- 📋 Display all available page URLs
+- 👤 Show default admin credentials
+
+### Option 2: Manual Start
+If you prefer to start manually:
+
+```bash
+# Start PHP built-in server
+php -S localhost:8080 -t .
+```
+
+### Option 3: Development Mode
+For development with error reporting enabled:
+
+```bash
+# Start development server with error reporting
+php -S localhost:8080 -t . -d display_errors=1
+```
+
+## 🌐 Accessing the Application
+
+Once the server is running, access these URLs:
+
+- **🏠 Main Page**: http://localhost:8080/frontend/index.html
+- **🔍 Search Page**: http://localhost:8080/frontend/search.html
+- **📝 Request Blood**: http://localhost:8080/frontend/request.html
+- **👥 Register**: http://localhost:8080/frontend/register.html
+- **🔐 Login**: http://localhost:8080/frontend/login.html
+- **⚙️ Admin Panel**: http://localhost:8080/frontend/admin.html
+- **📊 Monitor**: http://localhost:8080/frontend/monitor.html
+- **📞 Contact**: http://localhost:8080/frontend/contact.html
+
+### 🛑 Stopping the Server
+Press `Ctrl+C` in the terminal where the server is running to stop it.
 
 ## 🗂️ Project Structure
 
