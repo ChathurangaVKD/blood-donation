@@ -1,47 +1,47 @@
 #!/bin/bash
 
-# start.sh - Blood Donation System Startup Script
-echo "Starting Blood Donation System..."
+# BloodLink - Blood Donation System Startup Script
+# Author: Blood Donation System Team
+# Date: September 21, 2025
 
-# Kill any existing PHP server instances
-echo "Stopping any existing servers..."
-pkill -f "php -S localhost:8080" 2>/dev/null || true
+echo "🩸 BloodLink - Blood Donation Management System"
+echo "=============================================="
+echo ""
 
-# Wait a moment for processes to terminate
-sleep 2
-
-# Clear any cached session files and logs
-echo "Cleaning up old sessions and logs..."
-rm -f /tmp/sess_* 2>/dev/null || true
-rm -f server.log server_output.log 2>/dev/null || true
-
-# Start the PHP development server with proper routing
-echo "Starting PHP server on http://localhost:8080..."
-php -S localhost:8080 router.php > server.log 2>&1 &
-
-# Get the process ID
-SERVER_PID=$!
-
-# Wait a moment for server to start
-sleep 3
-
-# Check if server started successfully
-if ps -p $SERVER_PID > /dev/null; then
-    echo "✅ Server started successfully!"
-    echo "🌐 Open http://localhost:8080 in your browser"
-    echo "📋 Monitor page: http://localhost:8080/monitor.html"
-    echo "🔐 Login page: http://localhost:8080/login.html"
-    echo ""
-    echo "📝 Server logs are being written to server.log"
-    echo "🛑 To stop the server, run: pkill -f 'php -S localhost:8080'"
-    echo ""
-    echo "Press Ctrl+C to stop monitoring logs (server will continue running)"
-    echo "Server logs:"
-    echo "----------------------------------------"
-
-    # Follow the log file
-    tail -f server.log
-else
-    echo "❌ Failed to start server!"
+# Check if PHP is installed
+if ! command -v php &> /dev/null; then
+    echo "❌ PHP is not installed. Please install PHP 7.4 or higher."
     exit 1
 fi
+
+# Check PHP version
+PHP_VERSION=$(php -v | head -n 1 | cut -d " " -f 2 | cut -d "." -f 1,2)
+echo "✅ PHP Version: $PHP_VERSION"
+
+# Check if MySQL is running (optional check)
+if command -v mysql &> /dev/null; then
+    echo "✅ MySQL is available"
+else
+    echo "⚠️  MySQL command not found. Make sure MySQL server is running."
+fi
+
+echo ""
+echo "🚀 Starting BloodLink Development Server..."
+echo "📍 Server will be available at: http://localhost:8080"
+echo ""
+echo "🌐 Available Pages:"
+echo "   • Main Page:    http://localhost:8080/frontend/index.html"
+echo "   • Search:       http://localhost:8080/frontend/search.html"
+echo "   • Admin Panel:  http://localhost:8080/frontend/admin.html"
+echo "   • Login:        http://localhost:8080/frontend/login.html"
+echo ""
+echo "👤 Default Admin Login:"
+echo "   • Username: admin"
+echo "   • Password: admin123"
+echo ""
+echo "🛑 Press Ctrl+C to stop the server"
+echo "=============================================="
+echo ""
+
+# Start PHP built-in server
+php -S localhost:8080 -t .
