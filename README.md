@@ -72,6 +72,8 @@ A comprehensive blood donation management system built with PHP, MySQL, and mode
 ## 🎬 Starting the Application
 
 ### Option 1: Easy Start (Recommended)
+
+#### For Unix/Linux/macOS:
 Use the provided startup script for automatic setup and server launch:
 
 ```bash
@@ -82,7 +84,15 @@ chmod +x start.sh
 ./start.sh
 ```
 
-The startup script will:
+#### For Windows:
+Use the provided batch file:
+
+```cmd
+# Start the application
+start.bat
+```
+
+Both startup scripts will:
 - ✅ Check PHP installation and version
 - ✅ Verify MySQL availability
 - 🚀 Start the development server on `localhost:8080`
@@ -90,7 +100,7 @@ The startup script will:
 - 👤 Show default admin credentials
 
 ### Option 2: Manual Start
-If you prefer to start manually:
+If you prefer to start manually on any platform:
 
 ```bash
 # Start PHP built-in server
